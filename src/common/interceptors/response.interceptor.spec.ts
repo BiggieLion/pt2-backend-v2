@@ -4,7 +4,10 @@ import { of, throwError } from 'rxjs';
 import { IDataResponse, IResponse } from '../interfaces';
 
 // Build a minimal mock ExecutionContext for HTTP scenario
-const createMockContext = (statusCode: number, url = '/test'): ExecutionContext =>
+const createMockContext = (
+  statusCode: number,
+  url = '/test',
+): ExecutionContext =>
   ({
     switchToHttp: () => ({
       getRequest: () => ({ url }),
@@ -15,7 +18,7 @@ const createMockContext = (statusCode: number, url = '/test'): ExecutionContext 
     getArgByIndex: () => null,
     getArgs: () => [],
     getType: () => 'http',
-  } as unknown as ExecutionContext);
+  }) as unknown as ExecutionContext;
 
 describe('ResponseInterceptor', () => {
   let interceptor: ResponseInterceptor;
@@ -30,7 +33,10 @@ describe('ResponseInterceptor', () => {
 
   it('should wrap a successful response with provided message and data', (done) => {
     const context = createMockContext(200, '/items');
-    const payload: IDataResponse = { data: { foo: 'bar' }, message: 'Custom ok' };
+    const payload: IDataResponse = {
+      data: { foo: 'bar' },
+      message: 'Custom ok',
+    };
 
     interceptor
       .intercept(context, { handle: () => of(payload) })
@@ -89,17 +95,17 @@ describe('ResponseInterceptor', () => {
         error: (err: unknown) => {
           expect(err).toBeInstanceOf(HttpException);
           const httpErr = err as HttpException;
-            const body = httpErr.getResponse() as Record<string, unknown>;
-            expect(body).toMatchObject({
-              statusCode: 500,
-              success: false,
-              path: '/error',
-              action: 'CANCEL',
-              message: 'Boom',
-              data: {},
-            });
-            expect(typeof body.timestamp).toBe('number');
-            done();
+          const body = httpErr.getResponse() as Record<string, unknown>;
+          expect(body).toMatchObject({
+            statusCode: 500,
+            success: false,
+            path: '/error',
+            action: 'CANCEL',
+            message: 'Boom',
+            data: {},
+          });
+          expect(typeof body.timestamp).toBe('number');
+          done();
         },
       });
   });
