@@ -3,20 +3,56 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 describe('AppController', () => {
-  let appController: AppController;
+  let moduleRef: TestingModule;
+  let controller: AppController;
+  let service: AppService;
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+  beforeAll(async () => {
+    moduleRef = await Test.createTestingModule({
       controllers: [AppController],
       providers: [AppService],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    controller = moduleRef.get<AppController>(AppController);
+    service = moduleRef.get<AppService>(AppService);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+    expect(service).toBeDefined();
+  });
+
+  describe('getHello', () => {
+    it('should return the default hello message', () => {
+      expect(controller.getHello()).toBe('Hello World!');
+    });
+
+    it('should delegate to AppService.getHello()', () => {
+      const spy = jest
+        .spyOn(service, 'getHello')
+        .mockReturnValue('Hello Test!');
+      const result = controller.getHello();
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(result).toBe('Hello Test!');
+    });
+  });
+
+  describe('provider override', () => {
+    it('should allow overriding AppService for alternate response', async () => {
+      const overridden = await Test.createTestingModule({
+        controllers: [AppController],
+        providers: [
+          {
+            provide: AppService,
+            useValue: {
+              getHello: () => 'Hola Mundo!',
+            },
+          },
+        ],
+      }).compile();
+
+      const overriddenController = overridden.get<AppController>(AppController);
+      expect(overriddenController.getHello()).toBe('Hola Mundo!');
     });
   });
 });
