@@ -1,5 +1,6 @@
 import { AbstractEntity } from '@config/database';
-import { Column, Entity } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Entity('requester')
 export class Requester extends AbstractEntity<Requester> {
@@ -74,4 +75,13 @@ export class Requester extends AbstractEntity<Requester> {
 
   @Column({ nullable: false, type: 'boolean' })
   has_own_realty: boolean;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
+    if (this.password && !this.password.startsWith('$2')) {
+      const saltRounds: number = 12;
+      this.password = await bcrypt.hash(this.password, saltRounds);
+    }
+  }
 }
