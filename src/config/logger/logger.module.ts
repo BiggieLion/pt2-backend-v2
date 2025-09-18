@@ -5,23 +5,7 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
   imports: [
     PinoLoggerModule.forRoot({
       pinoHttp: {
-        timestamp: () => {
-          const now: Date = new Date();
-          const formattedDate: string = now.toLocaleDateString('es-MX', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          });
-
-          const formattedTime: string = now.toLocaleTimeString('es-MX', {
-            hour: 'numeric',
-            minute: 'numeric',
-            second: 'numeric',
-            hour12: true,
-          });
-
-          return ` "time": "${formattedDate} at ${formattedTime}"`;
-        },
+        base: {},
         formatters: {
           level: (label: string) => {
             return { level: label.toUpperCase() };
@@ -36,9 +20,9 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
           options: {
             singleLine: false,
             levelFirst: true,
-            colorized: true,
-            translateTime: true,
-            ignore: 'pid,hostname,time,level',
+            colorize: true,
+            translateTime: 'SYS:dd/mm/yyyy h:MM:ss TT',
+            ignore: 'pid,hostname',
             customLevels: {
               trace: 'gray',
               debug: 'cyan',

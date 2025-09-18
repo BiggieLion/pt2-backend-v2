@@ -1,0 +1,36 @@
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Build output
+dist
+coverage
+.build
+.temp
+.tmp
+
+# VCS
+.git
+.gitignore
+
+# IDE/editor
+.vscode
+.idea
+*.sublime-workspace
+
+# Tests and misc
+test
+.nyc_output
+
+# Env files (pass env via compose or CI/CD secrets)
+.env
+.env.*
+!.env.example
+
+# Compose files are not needed in the image build context
+docker-compose.yml
+docker-compose.prod.yml
