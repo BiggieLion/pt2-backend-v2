@@ -14,7 +14,9 @@ export abstract class AbstractEntity<T> {
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 
-  constructor(partial: Partial<T>) {
-    Object.assign(this, partial);
+  constructor(partial?: Partial<T>) {
+    if (partial) {
+      Object.assign(this, partial);
+    }
   }
 }

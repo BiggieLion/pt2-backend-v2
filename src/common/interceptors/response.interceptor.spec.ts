@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ResponseInterceptor } from './response.interceptor';
 import { ExecutionContext, HttpException } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
@@ -132,6 +133,24 @@ describe('ResponseInterceptor', () => {
           });
           done();
         },
+      });
+  });
+
+  it('should wrap a raw (non-DataResponse) payload into standard shape', (done) => {
+    const context = createMockContext(200, '/raw');
+    const rawPayload = 'Hello Raw';
+
+    interceptor
+      .intercept(context, { handle: () => of(rawPayload) })
+      .subscribe((wrapped: CustomResponse) => {
+        expect(wrapped.statusCode).toBe(200);
+        expect(wrapped.success).toBe(true);
+        expect(wrapped.path).toBe('/raw');
+        expect(wrapped.action).toBe('CONTINUE');
+        expect(wrapped.message).toBe('Request completed');
+        expect(wrapped.data).toBe('Hello Raw');
+        expect(typeof wrapped.timestamp).toBe('number');
+        done();
       });
   });
 });

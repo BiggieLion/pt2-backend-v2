@@ -17,36 +17,78 @@ export class ResponseInterceptor implements NestInterceptor {
     const { statusCode } = res;
 
     return next.handle().pipe(
-      map(
-        (data: DataResponse): CustomResponse => ({
+      map((payload: unknown): CustomResponse => {
+        const isRecord = (v: unknown): v is Record<string, unknown> =>
+          typeof v === 'object' && v !== null;
+        const isDataResponse = (v: unknown): v is DataResponse =>
+          isRecord(v) && 'data' in v;
+
+        let message = 'Request completed';
+        let data: unknown = payload;
+        if (isDataResponse(payload)) {
+          data = payload.data;
+          if (typeof payload.message === 'string') {
+            message = payload.message;
+          }
+        }
+
+        return {
           statusCode,
           success: statusCode < 400,
           timestamp: Date.now(),
           path: req.url,
           action: statusCode >= 400 ? 'CANCEL' : 'CONTINUE',
-          message: data?.message || 'Request completed',
-          data: data.data || {},
-        }),
-      ),
+          message,
+          data: data ?? {},
+        } as CustomResponse;
+      }),
 
-      catchError((error) => {
-        const statusCode: number =
-          error instanceof HttpException ? error.getStatus() : 500;
+      catchError((err: unknown) => {
+        const errorStatusCode: number =
+          err instanceof HttpException ? err.getStatus() : 500;
+
+        // Derive a safe error message without unsafe member access
+        let derivedMessage = 'Internal server error';
+        if (err instanceof HttpException) {
+          const resp = err.getResponse();
+          if (typeof resp === 'string') {
+            derivedMessage = resp;
+          } else if (resp && typeof resp === 'object') {
+            const maybeMsg = (resp as { message?: unknown }).message;
+            if (typeof maybeMsg === 'string') {
+              derivedMessage = maybeMsg;
+            } else if (Array.isArray(maybeMsg)) {
+              derivedMessage = maybeMsg.join(', ');
+            } else if (typeof err.message === 'string') {
+              derivedMessage = err.message;
+            }
+          } else if (typeof err.message === 'string') {
+            derivedMessage = err.message;
+          }
+        } else if (typeof err === 'string') {
+          derivedMessage = err;
+        } else if (
+          typeof err === 'object' &&
+          err !== null &&
+          'message' in err &&
+          typeof (err as { message?: unknown }).message === 'string'
+        ) {
+          derivedMessage = (err as { message: string }).message;
+        }
 
         const errorResponse = {
-          statusCode,
+          statusCode: errorStatusCode,
           success: false,
           timestamp: Date.now(),
           path: req.url,
           action: 'CANCEL',
-          message:
-            error.message ||
-            error?.response?.message ||
-            'Internal server error',
+          message: derivedMessage,
           data: {},
         };
 
-        return throwError(() => new HttpException(errorResponse, statusCode));
+        return throwError(
+          () => new HttpException(errorResponse, errorStatusCode),
+        );
       }),
     );
   }
