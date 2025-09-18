@@ -1,4 +1,4 @@
-export interface IResponse {
+export interface CustomResponse {
   statusCode: number;
   success: boolean;
   timestamp: number;
@@ -8,7 +8,7 @@ export interface IResponse {
   data: any;
 }
 
-export interface IDataResponse {
+export interface DataResponse {
   data: any;
   message?: string;
 }

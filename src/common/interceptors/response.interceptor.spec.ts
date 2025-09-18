@@ -1,7 +1,7 @@
 import { ResponseInterceptor } from './response.interceptor';
 import { ExecutionContext, HttpException } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
-import { IDataResponse, IResponse } from '../interfaces';
+import { DataResponse, CustomResponse } from '../interfaces';
 
 // Build a minimal mock ExecutionContext for HTTP scenario
 const createMockContext = (
@@ -33,14 +33,14 @@ describe('ResponseInterceptor', () => {
 
   it('should wrap a successful response with provided message and data', (done) => {
     const context = createMockContext(200, '/items');
-    const payload: IDataResponse = {
+    const payload: DataResponse = {
       data: { foo: 'bar' },
       message: 'Custom ok',
     };
 
     interceptor
       .intercept(context, { handle: () => of(payload) })
-      .subscribe((wrapped: IResponse) => {
+      .subscribe((wrapped: CustomResponse) => {
         expect(wrapped.statusCode).toBe(200);
         expect(wrapped.success).toBe(true);
         expect(wrapped.path).toBe('/items');
@@ -54,11 +54,11 @@ describe('ResponseInterceptor', () => {
 
   it('should supply default message when none is provided', (done) => {
     const context = createMockContext(200, '/default');
-    const payload: IDataResponse = { data: { value: 1 } }; // no message
+    const payload: DataResponse = { data: { value: 1 } }; // no message
 
     interceptor
       .intercept(context, { handle: () => of(payload) })
-      .subscribe((wrapped: IResponse) => {
+      .subscribe((wrapped: CustomResponse) => {
         expect(wrapped.message).toBe('Request completed');
         expect(wrapped.data).toEqual({ value: 1 });
         expect(wrapped.success).toBe(true);
@@ -68,11 +68,11 @@ describe('ResponseInterceptor', () => {
 
   it('should reflect failure when response statusCode >= 400', (done) => {
     const context = createMockContext(404, '/not-found');
-    const payload: IDataResponse = { data: {}, message: 'Resource missing' };
+    const payload: DataResponse = { data: {}, message: 'Resource missing' };
 
     interceptor
       .intercept(context, { handle: () => of(payload) })
-      .subscribe((wrapped: IResponse) => {
+      .subscribe((wrapped: CustomResponse) => {
         expect(wrapped.statusCode).toBe(404);
         expect(wrapped.success).toBe(false);
         expect(wrapped.action).toBe('CANCEL');

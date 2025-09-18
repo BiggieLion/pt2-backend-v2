@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { catchError, map, Observable, throwError } from 'rxjs';
-import { IDataResponse, IResponse } from '../interfaces';
+import { DataResponse, CustomResponse } from '../interfaces';
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
@@ -18,7 +18,7 @@ export class ResponseInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       map(
-        (data: IDataResponse): IResponse => ({
+        (data: DataResponse): CustomResponse => ({
           statusCode,
           success: statusCode < 400,
           timestamp: Date.now(),
