@@ -5,6 +5,7 @@ import { LoggerModule } from '@config/logger';
 import { ConfigurationModule } from '@config/configuration';
 import { RequesterService } from './requester.service';
 import { RequesterController } from './requester.controller';
+import { RequesterRepository } from './requester.repository';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { RequesterController } from './requester.controller';
     LoggerModule,
     ConfigurationModule,
   ],
-  providers: [RequesterService],
+  providers: [RequesterService, RequesterRepository],
   controllers: [RequesterController],
 })
 export class RequesterModule {}

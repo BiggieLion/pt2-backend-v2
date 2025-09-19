@@ -8,7 +8,13 @@ import { RequesterModule } from './requester/requester.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [DatabaseModule, ConfigurationModule, LoggerModule, RequesterModule, AuthModule],
+  imports: [
+    DatabaseModule,
+    ConfigurationModule,
+    LoggerModule,
+    RequesterModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

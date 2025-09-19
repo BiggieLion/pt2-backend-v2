@@ -1,4 +1,4 @@
-import { AbstractRepository } from '@config/database';
+import { AbstractRepository } from '../config/database/abstract.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { Requester } from './entities/requester.entity';
 import { InjectRepository } from '@nestjs/typeorm';

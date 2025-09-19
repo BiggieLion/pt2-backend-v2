@@ -1,15 +1,21 @@
 export const configuration = () => ({
   // Server
   node_env: process.env.NODE_ENV,
-  port: process.env.PORT,
+  port: process.env.PORT ? Number(process.env.PORT) : 3000,
 
   // Database
   database: {
     host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : undefined,
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    logging:
+      typeof process.env.DB_LOGGING === 'string'
+        ? ['true', '1', 'yes', 'y'].includes(
+            process.env.DB_LOGGING.toLowerCase(),
+          )
+        : false,
   },
 
   // AWS

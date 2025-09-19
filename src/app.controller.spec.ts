@@ -24,7 +24,7 @@ describe('AppController', () => {
 
   describe('getHello', () => {
     it('should return the default hello message', () => {
-      expect(controller.getHello()).toBe('Hello World!');
+      expect(controller.getHello()).toBe('App is healthy');
     });
 
     it('should delegate to AppService.getHello()', () => {

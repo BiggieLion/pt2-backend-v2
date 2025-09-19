@@ -1,4 +1,4 @@
-import { AbstractEntity } from '@config/database';
+import { AbstractEntity } from '../../config/database/abstract.entity';
 import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
@@ -31,7 +31,7 @@ export class Requester extends AbstractEntity<Requester> {
   @Column({ nullable: false, type: 'varchar' })
   address: string;
 
-  @Column({ nullable: false, type: 'char' })
+  @Column({ nullable: false, type: 'char', length: 1 })
   gender: string;
 
   @Column({ nullable: true, type: 'boolean', default: false })

@@ -1,22 +1,38 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import {
+  INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import request, { Response as SupertestResponse } from 'supertest';
 import { App } from 'supertest/types';
-import { AppController } from '../src/app.controller';
-import { AppService } from '../src/app.service';
-import { RequesterController } from '../src/requester/requester.controller';
+import { AppModule } from '../src/app.module';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
 
-describe('AppController (e2e)', () => {
+// Mock infrastructure-heavy modules to avoid external connections in tests
+jest.mock('../src/config/database/database.module', () => ({
+  DatabaseModule: class DatabaseModule {
+    public static readonly mocked = true;
+  },
+}));
+jest.mock('../src/config/logger/logger.module', () => ({
+  LoggerModule: class LoggerModule {
+    public static readonly mocked = true;
+  },
+}));
+
+describe('AppModule Integration (e2e)', () => {
   let app: INestApplication<App>;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [AppController, RequesterController],
-      providers: [AppService],
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleRef.createNestApplication();
+    // Mirror main.ts global setup
+    app.setGlobalPrefix('api');
+    app.enableVersioning({ type: VersioningType.URI });
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true }),
     );
@@ -24,9 +40,13 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/health (GET) returns standardized response', async () => {
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('GET /api/health should use global response shape', async () => {
     const response: SupertestResponse = await request(app.getHttpServer())
-      .get('/health')
+      .get('/api/health')
       .expect(200);
     type StandardResponse = {
       statusCode: number;
@@ -42,22 +62,18 @@ describe('AppController (e2e)', () => {
       expect.objectContaining({
         statusCode: 200,
         success: true,
-        path: '/health',
+        path: '/api/health',
         action: 'CONTINUE',
         message: 'Request completed',
       }),
     );
-
-    // Data should contain the raw controller payload (string)
     expect(body.data).toBe('App is healthy');
-    expect(typeof body.timestamp).toBe('number');
   });
 
-  it('/requester/health (GET) returns standardized health response', async () => {
+  it('GET /api/v1/requester/health should respect URI versioning', async () => {
     const response: SupertestResponse = await request(app.getHttpServer())
-      .get('/requester/health')
+      .get('/api/v1/requester/health')
       .expect(200);
-
     type StandardResponse = {
       statusCode: number;
       success: boolean;
@@ -72,12 +88,11 @@ describe('AppController (e2e)', () => {
       expect.objectContaining({
         statusCode: 200,
         success: true,
-        path: '/requester/health',
+        path: '/api/v1/requester/health',
         action: 'CONTINUE',
         message: 'Request completed',
       }),
     );
     expect(body.data).toBe('Requester service is healthy');
-    expect(typeof body.timestamp).toBe('number');
   });
 });

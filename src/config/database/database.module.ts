@@ -15,10 +15,11 @@ import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-clas
         username: configSvc.getOrThrow<string>('database.username'),
         password: configSvc.getOrThrow<string>('database.password'),
         database: configSvc.getOrThrow<string>('database.database'),
-        synchronize: configSvc.getOrThrow<string>('node_env') === 'dev',
+        synchronize: configSvc.getOrThrow<string>('node_env') === 'development',
         autoLoadEntities: true,
+        logging: configSvc.get<boolean>('database.logging') ?? false,
         ssl:
-          configSvc.getOrThrow<string>('node_env') === 'prod'
+          configSvc.getOrThrow<string>('node_env') === 'production'
             ? { rejectUnauthorized: false }
             : false,
       }),
