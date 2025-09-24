@@ -24,7 +24,9 @@
     "paths": {
       "@common/*": ["src/common/*"],
       "@config/*": ["src/config/*"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@requester/*": ["src/requester/*"],
+      "@auth/*": ["src/auth/*"]
     }
   }
 }

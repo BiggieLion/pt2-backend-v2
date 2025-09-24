@@ -3,6 +3,7 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
+  IsDecimal,
   IsEmail,
   IsIn,
   IsNotEmpty,
@@ -36,7 +37,7 @@ export class CreateRequesterDto {
   lastname: string;
 
   @Type(() => Number)
-  @IsNumber()
+  @IsDecimal()
   @IsNotEmpty()
   monthly_income: number;
 

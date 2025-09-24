@@ -5,17 +5,14 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { CreateRequesterDto } from './dto/create-requester.dto';
 import { RequesterService } from './requester.service';
-import { CognitoAuthGuard } from 'src/auth/guard/cognito.guard';
 
 @Controller('requester')
 export class RequesterController {
   constructor(private readonly requesterSvc: RequesterService) {}
 
-  @UseGuards(CognitoAuthGuard)
   @Get('health')
   @HttpCode(HttpStatus.OK)
   getHealth(): string {

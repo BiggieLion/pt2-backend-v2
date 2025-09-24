@@ -7,7 +7,7 @@ import { ConfigurationModule } from '@config/configuration';
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'cognito' }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     ConfigurationModule,
   ],
   providers: [CognitoJwtStrategy, AuthService],

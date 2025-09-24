@@ -1,4 +1,5 @@
 import {
+  AuthenticationResultType,
   CognitoIdentityProviderClient,
   ConfirmForgotPasswordCommand,
   ForgotPasswordCommand,
@@ -13,10 +14,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { LoginUserDto } from './dto/login-user.dto';
-import { AuthTokens } from './dto/auth-tokens.dto';
-import { ForgotPasswordDto } from './dto/forgot-pasword.dto';
-import { ConfirmForgotPasswordDto } from './dto/confirm-forgot-password.dto';
+import {
+  AuthTokens,
+  ConfirmForgotPasswordDto,
+  ForgotPasswordDto,
+  LoginUserDto,
+  RefreshTokenDto,
+} from './dto';
 
 @Injectable()
 export class AuthService {
@@ -153,6 +157,47 @@ export class AuthService {
       }
       this.logger.error('Failed to confirm password reset', err as Error);
       throw new BadRequestException(message);
+    }
+  }
+
+  async refresh(dto: RefreshTokenDto): Promise<AuthTokens> {
+    this.logger.log(`Refreshing token`);
+    try {
+      const resp = await this.client.send(
+        new InitiateAuthCommand({
+          AuthFlow: 'REFRESH_TOKEN_AUTH',
+          ClientId: this.clientId,
+          AuthParameters: {
+            REFRESH_TOKEN: dto.refreshToken,
+          },
+        }),
+      );
+
+      const auth: AuthenticationResultType | undefined =
+        resp.AuthenticationResult;
+      if (!auth) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      return {
+        accessToken: auth.AccessToken,
+        idToken: auth.IdToken,
+        refreshToken: dto.refreshToken,
+        expiresIn: auth.ExpiresIn,
+        tokenType: auth.TokenType,
+      };
+    } catch (err: unknown) {
+      const message =
+        typeof err === 'object' &&
+        err !== null &&
+        'name' in err &&
+        typeof (err as { name?: string }).name === 'string'
+          ? (err as { name: string }).name
+          : 'Failed to refresh token';
+      if (message === 'NotAuthorizedException') {
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
+      throw new UnauthorizedException(message);
     }
   }
 }

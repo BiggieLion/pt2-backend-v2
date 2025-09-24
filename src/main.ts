@@ -13,6 +13,10 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidUnknownValues: false,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
   app.useGlobalInterceptors(new ResponseInterceptor());

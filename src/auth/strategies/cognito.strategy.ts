@@ -34,7 +34,6 @@ export class CognitoJwtStrategy extends PassportStrategy(JwtStrategy) {
   }
 
   validate(payload: JwtToken): UserDto {
-    console.log('Cognito JWT payload', payload);
     if (payload.token_use !== 'access' && payload.token_use !== 'id') {
       throw new UnauthorizedException('Invalid token use');
     }
@@ -44,8 +43,6 @@ export class CognitoJwtStrategy extends PassportStrategy(JwtStrategy) {
       payload['cognito:groups'].length > 0
         ? payload['cognito:groups'][0]
         : 'default';
-
-    console.log('Cognito JWT payload', payload, rol);
 
     return {
       id: payload.sub,

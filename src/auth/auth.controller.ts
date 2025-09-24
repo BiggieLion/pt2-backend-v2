@@ -9,11 +9,14 @@ import {
   Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginUserDto } from './dto/login-user.dto';
-import { AuthTokens } from './dto/auth-tokens.dto';
-import { ForgotPasswordDto } from './dto/forgot-pasword.dto';
-import { ConfirmForgotPasswordDto } from './dto/confirm-forgot-password.dto';
 import type { Response } from 'express';
+import {
+  AuthTokens,
+  ConfirmForgotPasswordDto,
+  ForgotPasswordDto,
+  LoginUserDto,
+  RefreshTokenDto,
+} from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -24,18 +27,23 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   healthCheck() {
     this.logger.log('Health check');
-    return 'Auth service is healthy';
+    return { data: {}, message: 'Auth service is healthy' };
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginUserDto, @Res() response: Response) {
+  async login(
+    @Body() dto: LoginUserDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const data: AuthTokens = await this.authSvc.login(dto);
     this.logger.log(`Setting auth cookie for user login`);
-    response.setHeader(
-      'set-Cookie',
-      `Authorization=Bearer ${data.idToken}; HttpOnly; Path=/; Max-Age=${data.expiresIn}`,
-    );
+    response.cookie('Authorization', `Bearer ${data.idToken}`, {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: data.expiresIn,
+    });
     response.status(HttpStatus.OK).json({
       data: {
         accessToken: data.idToken,
@@ -66,5 +74,12 @@ export class AuthController {
       data,
       message: 'Password changed successfully',
     };
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body() dto: RefreshTokenDto) {
+    const data: AuthTokens = await this.authSvc.refresh(dto);
+    return { message: 'Token refreshed', data };
   }
 }
