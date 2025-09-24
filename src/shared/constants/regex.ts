@@ -61,4 +61,4 @@ export const RFC_REGEX: RegExp = new RegExp(
 );
 
 export const PASSWORD_REGEX: RegExp =
-  /^(?=.*\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9\s]).{6,}$/;
+  /^(?=.*\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9\s]).{8,}$/;

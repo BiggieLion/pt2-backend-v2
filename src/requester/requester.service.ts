@@ -1,18 +1,12 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RequesterRepository } from './requester.repository';
 import {
   AdminAddUserToGroupCommand,
-  AdminCreateUserCommand,
   AdminDeleteUserCommand,
   AdminGetUserCommand,
-  AdminSetUserPasswordCommand,
   CognitoIdentityProviderClient,
+  SignUpCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { CreateRequesterDto } from './dto/create-requester.dto';
 import { Requester } from './entities/requester.entity';
@@ -47,27 +41,21 @@ export class RequesterService {
     const username: string = dto.email.trim().toLowerCase();
     // Creating Cognito user (suppressing email and setting permanent password)
     try {
-      await this.cognitoClient.send(
-        new AdminCreateUserCommand({
-          UserPoolId: this.userPoolId,
+      const te = await this.cognitoClient.send(
+        new SignUpCommand({
+          ClientId: this.configSvc.getOrThrow<string>('cognito.clientId'),
           Username: username,
-          MessageAction: 'SUPPRESS',
+          Password: dto.password,
           UserAttributes: [
             { Name: 'email', Value: username },
-            { Name: 'email_verified', Value: 'true' },
             { Name: 'name', Value: `${dto.firstname} ${dto.lastname}` },
+            { Name: 'custom:rfc', Value: dto.rfc },
+            { Name: 'custom:curp', Value: dto.curp },
           ],
         }),
       );
 
-      await this.cognitoClient.send(
-        new AdminSetUserPasswordCommand({
-          UserPoolId: this.userPoolId,
-          Username: username,
-          Password: dto.password,
-          Permanent: true,
-        }),
-      );
+      this.logger.log('Cognito user created, setting password and group', te);
 
       await this.cognitoClient.send(
         new AdminAddUserToGroupCommand({
@@ -137,7 +125,7 @@ export class RequesterService {
           delError as Error,
         );
       }
-      throw new InternalServerErrorException('Could not create requester');
+      throw new BadRequestException('User already exists');
     }
   }
 }

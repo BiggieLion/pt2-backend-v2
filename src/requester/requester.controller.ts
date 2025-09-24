@@ -5,13 +5,17 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateRequesterDto } from './dto/create-requester.dto';
 import { RequesterService } from './requester.service';
+import { CognitoAuthGuard } from 'src/auth/guard/cognito.guard';
 
-@Controller({ path: 'requester', version: '1' })
+@Controller('requester')
 export class RequesterController {
   constructor(private readonly requesterSvc: RequesterService) {}
+
+  @UseGuards(CognitoAuthGuard)
   @Get('health')
   @HttpCode(HttpStatus.OK)
   getHealth(): string {
@@ -23,6 +27,6 @@ export class RequesterController {
   async create(@Body() createRequesterDto: CreateRequesterDto) {
     const data = await this.requesterSvc.create(createRequesterDto);
 
-    return { data, message: 'Requester created successfully' };
+    return { data, message: 'Is it necessary to verify the email' };
   }
 }

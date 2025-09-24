@@ -17,7 +17,6 @@ import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-clas
         database: configSvc.getOrThrow<string>('database.database'),
         synchronize: configSvc.getOrThrow<string>('node_env') === 'development',
         autoLoadEntities: true,
-        logging: configSvc.get<boolean>('database.logging') ?? false,
         ssl:
           configSvc.getOrThrow<string>('node_env') === 'production'
             ? { rejectUnauthorized: false }
