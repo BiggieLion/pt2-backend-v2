@@ -80,7 +80,9 @@
     "moduleNameMapper": {
       "^@common/(.*)$": "<rootDir>/common/$1",
       "^@config/(.*)$": "<rootDir>/config/$1",
-      "^@shared/(.*)$": "<rootDir>/shared/$1"
+      "^@shared/(.*)$": "<rootDir>/shared/$1",
+      "^@auth/(.*)$": "<rootDir>/auth/$1",
+      "^@requester/(.*)$": "<rootDir>/requester/$1"
     },
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {

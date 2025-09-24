@@ -34,7 +34,7 @@ describe('AuthController', () => {
         'log',
       );
       const result = controller.healthCheck();
-      expect(result).toBe('Auth service is healthy');
+      expect(result).toEqual({ data: {}, message: 'Auth service is healthy' });
       expect(logSpy).toHaveBeenCalledWith('Health check');
     });
   });

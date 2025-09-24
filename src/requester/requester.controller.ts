@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Version,
 } from '@nestjs/common';
 import { CreateRequesterDto } from './dto/create-requester.dto';
 import { RequesterService } from './requester.service';
@@ -13,6 +14,7 @@ import { RequesterService } from './requester.service';
 export class RequesterController {
   constructor(private readonly requesterSvc: RequesterService) {}
 
+  @Version('1')
   @Get('health')
   @HttpCode(HttpStatus.OK)
   getHealth(): string {
@@ -23,7 +25,6 @@ export class RequesterController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createRequesterDto: CreateRequesterDto) {
     const data = await this.requesterSvc.create(createRequesterDto);
-
-    return { data, message: 'Is it necessary to verify the email' };
+    return { data, message: 'Requester created successfully' };
   }
 }

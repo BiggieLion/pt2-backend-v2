@@ -4,11 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import { RequesterRepository } from './requester.repository';
 import {
   AdminAddUserToGroupCommand,
-  AdminCreateUserCommand,
   AdminDeleteUserCommand,
   AdminGetUserCommand,
-  AdminSetUserPasswordCommand,
   CognitoIdentityProviderClient,
+  SignUpCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { CreateRequesterDto } from './dto/create-requester.dto';
 import {
@@ -60,8 +59,8 @@ describe('RequesterService', () => {
     expect(service).toBeDefined();
   });
 
-  it('create() should create user, set password, add to group, read sub, and persist', async () => {
-    // Mock AWS send sequence: AdminCreateUser, AdminSetUserPassword, AdminAddUserToGroup, AdminGetUser
+  it('create() should create user, add to group, read sub, and persist', async () => {
+    // Mock AWS send sequence: SignUp, AdminAddUserToGroup, AdminGetUser
     sendMock.mockImplementation((cmd: unknown) => {
       if (cmd instanceof AdminGetUserCommand) {
         return Promise.resolve({
@@ -100,10 +99,7 @@ describe('RequesterService', () => {
     };
 
     const result = await service.create(dto as CreateRequesterDto);
-    expect(sendMock).toHaveBeenCalledWith(expect.any(AdminCreateUserCommand));
-    expect(sendMock).toHaveBeenCalledWith(
-      expect.any(AdminSetUserPasswordCommand),
-    );
+    expect(sendMock).toHaveBeenCalledWith(expect.any(SignUpCommand));
     expect(sendMock).toHaveBeenCalledWith(
       expect.any(AdminAddUserToGroupCommand),
     );
@@ -178,8 +174,7 @@ describe('RequesterService', () => {
     // AWS happy path
     sendMock.mockResolvedValue({});
     // Returning a sub on getUser
-    sendMock.mockImplementationOnce(() => Promise.resolve({})); // create
-    sendMock.mockImplementationOnce(() => Promise.resolve({})); // set pwd
+    sendMock.mockImplementationOnce(() => Promise.resolve({})); // sign up
     sendMock.mockImplementationOnce(() => Promise.resolve({})); // add group
     sendMock.mockImplementationOnce(() =>
       Promise.resolve({ UserAttributes: [{ Name: 'sub', Value: 'sub-123' }] }),

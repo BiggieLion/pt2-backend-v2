@@ -5,6 +5,7 @@ import { App } from 'supertest/types';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { RequesterController } from '../src/requester/requester.controller';
+import { RequesterService } from '../src/requester/requester.service';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
 
 describe('AppController (e2e)', () => {
@@ -13,7 +14,16 @@ describe('AppController (e2e)', () => {
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AppController, RequesterController],
-      providers: [AppService],
+      providers: [
+        AppService,
+        {
+          provide: RequesterService,
+          useValue: {
+            getHealth: () => 'Requester service is healthy',
+            create: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();

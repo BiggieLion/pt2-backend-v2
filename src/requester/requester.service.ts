@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RequesterRepository } from './requester.repository';
 import {
@@ -125,7 +130,7 @@ export class RequesterService {
           delError as Error,
         );
       }
-      throw new BadRequestException('User already exists');
+      throw new InternalServerErrorException('Failed to persist requester');
     }
   }
 }
