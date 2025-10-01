@@ -28,14 +28,11 @@ export class AuthService {
   private readonly client: CognitoIdentityProviderClient;
   private readonly clientId: string;
 
-  constructor(private readonly configSvc: ConfigService) {
-    this.client = new CognitoIdentityProviderClient({
-      region: this.configSvc.getOrThrow<string>('aws.region'),
-      credentials: {
-        accessKeyId: this.configSvc.getOrThrow<string>('aws.accessKey'),
-        secretAccessKey: this.configSvc.getOrThrow<string>('aws.secretKey'),
-      },
-    });
+  constructor(
+    private readonly configSvc: ConfigService,
+    client: CognitoIdentityProviderClient,
+  ) {
+    this.client = client;
     this.clientId = this.configSvc.getOrThrow<string>('cognito.clientId');
   }
 

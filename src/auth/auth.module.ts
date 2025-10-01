@@ -5,11 +5,13 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ConfigurationModule } from '@config/configuration';
 import { RolesGuard } from './guards/roles.guard';
+import { CognitoModule } from '@config/cognito/cognito.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     ConfigurationModule,
+    CognitoModule,
   ],
   providers: [CognitoJwtStrategy, AuthService, RolesGuard],
   exports: [PassportModule, RolesGuard],

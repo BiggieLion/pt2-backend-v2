@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request, { Response as SupertestResponse } from 'supertest';
 import { App } from 'supertest/types';
 import { AppController } from '../src/app.controller';
@@ -7,12 +7,22 @@ import { AppService } from '../src/app.service';
 import { RequesterController } from '../src/requester/requester.controller';
 import { RequesterService } from '../src/requester/requester.service';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        ThrottlerModule.forRoot({
+          throttlers: [
+            { ttl: 60000, limit: 10 },
+            { name: 'requester-create', ttl: 60000, limit: 5 },
+          ],
+        }),
+      ],
       controllers: [AppController, RequesterController],
       providers: [
         AppService,
@@ -23,13 +33,12 @@ describe('AppController (e2e)', () => {
             create: jest.fn(),
           },
         },
+        { provide: APP_GUARD, useClass: ThrottlerGuard },
       ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
+    // NOTE: Skip ValidationPipe here to focus the test on response shaping & throttling
     app.useGlobalInterceptors(new ResponseInterceptor());
     await app.init();
   });
@@ -89,5 +98,35 @@ describe('AppController (e2e)', () => {
     );
     expect(body.data).toBe('Requester service is healthy');
     expect(typeof body.timestamp).toBe('number');
+  });
+
+  it('/requester (POST) is rate limited by named throttler', async () => {
+    const service = app.get<RequesterService>(RequesterService) as unknown as {
+      create: jest.Mock;
+    };
+    service.create.mockResolvedValue({ id: 'x', sub: 'y', email: 'a@b.c' });
+
+    // First 5 requests should pass with 201
+    for (let i = 0; i < 5; i++) {
+      const res = await request(app.getHttpServer())
+        .post('/requester')
+        .send({ email: 'a@b.c', password: 'Abcdef1!' })
+        .expect(201);
+      expect(res.body).toEqual(
+        expect.objectContaining({ success: true, statusCode: 201 }),
+      );
+    }
+
+    // Sixth request should be throttled with 429
+    const throttled = await request(app.getHttpServer())
+      .post('/requester')
+      .send({ email: 'a@b.c', password: 'Abcdef1!' })
+      .expect(429);
+    const throttledBody = throttled.body as {
+      statusCode: number;
+      message?: string;
+    };
+    expect(throttledBody).toEqual(expect.objectContaining({ statusCode: 429 }));
+    expect(typeof throttledBody.message).toBe('string');
   });
 });

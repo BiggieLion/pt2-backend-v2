@@ -19,7 +19,11 @@ import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-clas
         autoLoadEntities: true,
         ssl:
           configSvc.getOrThrow<string>('node_env') === 'production'
-            ? { rejectUnauthorized: false }
+            ? {
+                rejectUnauthorized:
+                  configSvc.get<boolean>('database.sslRejectUnauthorized') ??
+                  true,
+              }
             : false,
       }),
       inject: [ConfigService],

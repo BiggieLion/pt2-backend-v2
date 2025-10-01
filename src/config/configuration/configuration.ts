@@ -2,6 +2,12 @@ export const configuration = () => ({
   // Server
   node_env: process.env.NODE_ENV,
   port: process.env.PORT ? Number(process.env.PORT) : 3000,
+  cors: {
+    origins: process.env.CORS_ORIGINS,
+    credentials: process.env.CORS_CREDENTIALS
+      ? process.env.CORS_CREDENTIALS === 'true'
+      : true,
+  },
 
   // Database
   database: {
@@ -10,6 +16,7 @@ export const configuration = () => ({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    sslRejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
   },
 
   // AWS

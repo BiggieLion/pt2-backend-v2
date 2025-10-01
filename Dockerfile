@@ -1,29 +1,27 @@
-FROM node:slim AS development
+FROM node:lts-slim AS development
 
-ARG NODE_ENV=development
-ENV NODE_ENV=${NODE_ENV}
+ENV NODE_ENV=development
 
 WORKDIR /app
-
-RUN npm install -g @nestjs/cli
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
 COPY src ./src
 
-RUN npm run build
+RUN npx nest build
 
-FROM node:slim AS production
+FROM node:lts-slim AS production
 
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
+ENV NODE_ENV=production
 
 WORKDIR /app
-
-COPY package.json ./
-
-RUN npm install --omit=dev
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
 COPY --from=development /app/dist ./dist
+
+# Run as non-root for security
+RUN useradd -r -u 1001 nodeusr && chown -R nodeusr:nodeusr /app
+USER nodeusr
 
 CMD [ "node", "dist/main" ]

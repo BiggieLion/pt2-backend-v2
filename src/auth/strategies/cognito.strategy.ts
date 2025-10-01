@@ -34,7 +34,7 @@ export class CognitoJwtStrategy extends PassportStrategy(JwtStrategy) {
   }
 
   validate(payload: JwtToken): UserDto {
-    if (payload.token_use !== 'access' && payload.token_use !== 'id') {
+    if (payload.token_use !== 'access') {
       throw new UnauthorizedException('Invalid token use');
     }
 

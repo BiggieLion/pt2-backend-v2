@@ -5,7 +5,6 @@ import { RequesterRepository } from './requester.repository';
 import {
   AdminAddUserToGroupCommand,
   AdminDeleteUserCommand,
-  AdminGetUserCommand,
   CognitoIdentityProviderClient,
   SignUpCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
@@ -37,35 +36,32 @@ describe('RequesterService', () => {
                 'aws.secretKey': 'y',
                 'cognito.userPoolId': 'pool',
                 'cognito.requesterGroup': 'requester',
+                'cognito.clientId': 'client-123',
               };
               return map[key];
             }),
           },
         },
         { provide: RequesterRepository, useValue: repo },
+        {
+          provide: CognitoIdentityProviderClient,
+          useValue: { send: sendMock },
+        },
       ],
     }).compile();
 
     service = module.get<RequesterService>(RequesterService);
-    // Override internal client send with mock
-    (
-      service as unknown as { cognitoClient: CognitoIdentityProviderClient }
-    ).cognitoClient = {
-      send: sendMock,
-    } as unknown as CognitoIdentityProviderClient;
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('create() should create user, add to group, read sub, and persist', async () => {
-    // Mock AWS send sequence: SignUp, AdminAddUserToGroup, AdminGetUser
+  it('create() should create user, add to group, capture UserSub, and persist', async () => {
+    // Mock AWS send sequence: SignUp (with UserSub), AdminAddUserToGroup
     sendMock.mockImplementation((cmd: unknown) => {
-      if (cmd instanceof AdminGetUserCommand) {
-        return Promise.resolve({
-          UserAttributes: [{ Name: 'sub', Value: 'sub-123' }],
-        });
+      if (cmd instanceof SignUpCommand) {
+        return Promise.resolve({ UserSub: 'sub-123' });
       }
       return Promise.resolve({});
     });
@@ -103,7 +99,6 @@ describe('RequesterService', () => {
     expect(sendMock).toHaveBeenCalledWith(
       expect.any(AdminAddUserToGroupCommand),
     );
-    expect(sendMock).toHaveBeenCalledWith(expect.any(AdminGetUserCommand));
     expect(repo.create).toHaveBeenCalled();
     expect(result).toEqual({
       id: '1',
@@ -172,13 +167,11 @@ describe('RequesterService', () => {
 
   it('create() should rollback Cognito user when DB persistence fails', async () => {
     // AWS happy path
-    sendMock.mockResolvedValue({});
-    // Returning a sub on getUser
-    sendMock.mockImplementationOnce(() => Promise.resolve({})); // sign up
-    sendMock.mockImplementationOnce(() => Promise.resolve({})); // add group
-    sendMock.mockImplementationOnce(() =>
-      Promise.resolve({ UserAttributes: [{ Name: 'sub', Value: 'sub-123' }] }),
-    ); // get user
+    sendMock.mockImplementation((cmd: unknown) => {
+      if (cmd instanceof SignUpCommand)
+        return Promise.resolve({ UserSub: 'sub-123' });
+      return Promise.resolve({});
+    });
     // DB fails
     repo.create.mockRejectedValue(new Error('DB error'));
 
@@ -211,15 +204,12 @@ describe('RequesterService', () => {
     expect(sendMock).toHaveBeenCalledWith(expect.any(AdminDeleteUserCommand));
   });
 
-  it('create() should proceed even if AdminGetUser fails and prefer DB sub', async () => {
-    // Mock AWS happy path until getUser
+  it('create() should prefer DB sub if UserSub is missing', async () => {
+    // SignUp without UserSub
     sendMock.mockImplementation((cmd: unknown) => {
-      if (cmd instanceof AdminGetUserCommand) {
-        return Promise.reject(new Error('AWS getUser down'));
-      }
+      if (cmd instanceof SignUpCommand) return Promise.resolve({});
       return Promise.resolve({});
     });
-
     // Repo returns entity with its own sub
     repo.create.mockResolvedValue({
       id: '2',
@@ -247,7 +237,6 @@ describe('RequesterService', () => {
       birthdate: new Date('1990-01-01'),
       has_own_car: true,
       has_own_realty: false,
-      sub: 'ignored-sub',
     };
 
     const result = await service.create(dto);
@@ -286,13 +275,104 @@ describe('RequesterService', () => {
       birthdate: new Date('1990-01-01'),
       has_own_car: true,
       has_own_realty: false,
-      sub: '',
     };
 
     await service.create(dto);
-    // Ensure repository receives normalized email
-    expect(repo.create).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'john@example.com' }),
+    // Ensure Cognito receives normalized username
+    let signUpCmd: SignUpCommand | undefined;
+    for (const call of sendMock.mock.calls as Array<[unknown, ...unknown[]]>) {
+      const [cmd] = call;
+      if (cmd instanceof SignUpCommand) {
+        signUpCmd = cmd;
+        break;
+      }
+    }
+    expect(signUpCmd).toBeDefined();
+    expect((signUpCmd as SignUpCommand).input.Username).toBe(
+      'john@example.com',
     );
+  });
+
+  it('getRequester() should return a view DTO without exposing sub', async () => {
+    // Arrange repository to return a full entity including sub
+    const repoAny = (service as unknown as { requesterRepo: any })
+      .requesterRepo as { findOne: jest.Mock };
+    if (!repoAny.findOne) {
+      // If repository is not directly accessible, rebind provider with spy
+      (service as unknown as { requesterRepo: any }).requesterRepo = {
+        findOne: jest.fn().mockResolvedValue({
+          id: '10',
+          curp: 'CUPR800101HDFABC01',
+          rfc: 'ABCD800101XYZ',
+          firstname: 'John',
+          lastname: 'Doe',
+          monthly_income: 1000,
+          email: 'john@example.com',
+          sub: 'sub-secret',
+          address: 'Street 1',
+          gender: 'M',
+          has_ine: true,
+          has_birth: false,
+          has_domicile: true,
+          has_guarantee: false,
+          count_children: 0,
+          count_adults: 2,
+          count_family_members: 2,
+          civil_status: 'single',
+          education_level: 'bachelor',
+          occupation_type: 1,
+          days_employed: 100,
+          birthdate: new Date('1990-01-01'),
+          has_own_car: true,
+          has_own_realty: false,
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-02'),
+        }),
+      };
+    } else {
+      repoAny.findOne.mockResolvedValue({
+        id: '10',
+        curp: 'CUPR800101HDFABC01',
+        rfc: 'ABCD800101XYZ',
+        firstname: 'John',
+        lastname: 'Doe',
+        monthly_income: 1000,
+        email: 'john@example.com',
+        sub: 'sub-secret',
+        address: 'Street 1',
+        gender: 'M',
+        has_ine: true,
+        has_birth: false,
+        has_domicile: true,
+        has_guarantee: false,
+        count_children: 0,
+        count_adults: 2,
+        count_family_members: 2,
+        civil_status: 'single',
+        education_level: 'bachelor',
+        occupation_type: 1,
+        days_employed: 100,
+        birthdate: new Date('1990-01-01'),
+        has_own_car: true,
+        has_own_realty: false,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-02'),
+      });
+    }
+
+    // Act
+    const view = await service.getRequester('10');
+
+    // Assert
+    expect(view).toMatchObject({
+      id: '10',
+      email: 'john@example.com',
+      firstname: 'John',
+      lastname: 'Doe',
+    });
+    expect((view as unknown as { [k: string]: unknown })['sub']).toBe(
+      undefined,
+    );
+    expect(Object.hasOwn(view as object, 'sub')).toBe(false);
   });
 });

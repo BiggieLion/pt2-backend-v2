@@ -6,9 +6,25 @@ import { ConfigurationModule } from './config/configuration/configuration.module
 import { LoggerModule } from './config/logger/logger.module';
 import { RequesterModule } from './requester/requester.module';
 import { AuthModule } from './auth/auth.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './auth/guards/roles.guard';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 10,
+        },
+        {
+          name: 'requester-create',
+          ttl: 60000,
+          limit: 5,
+        },
+      ],
+    }),
     DatabaseModule,
     ConfigurationModule,
     LoggerModule,
@@ -16,6 +32,10 @@ import { AuthModule } from './auth/auth.module';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule {}

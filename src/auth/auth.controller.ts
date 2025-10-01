@@ -6,10 +6,8 @@ import {
   HttpStatus,
   Logger,
   Post,
-  Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import type { Response } from 'express';
 import {
   AuthTokens,
   ConfirmForgotPasswordDto,
@@ -18,7 +16,7 @@ import {
   RefreshTokenDto,
 } from './dto';
 
-@Controller('auth')
+@Controller({ path: 'auth', version: '1' })
 export class AuthController {
   protected readonly logger = new Logger(AuthController.name);
   constructor(private readonly authSvc: AuthService) {}
@@ -32,32 +30,22 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(
-    @Body() dto: LoginUserDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
+  async login(@Body() dto: LoginUserDto) {
     const data: AuthTokens = await this.authSvc.login(dto);
-    this.logger.log(`Setting auth cookie for user login`);
-    response.cookie('Authorization', `Bearer ${data.idToken}`, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: data.expiresIn,
-    });
-    response.status(HttpStatus.OK).json({
+    return {
       data: {
-        accessToken: data.idToken,
+        accessToken: data.accessToken ?? data.idToken,
         expiresIn: data.expiresIn,
         refreshToken: data.refreshToken,
         tokenType: 'Bearer',
       },
       message: 'Authenticated',
-    });
+    };
   }
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body('email') dto: ForgotPasswordDto) {
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
     const data = await this.authSvc.forgotPassword(dto);
     return {
       data,

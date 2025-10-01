@@ -1,17 +1,17 @@
-version: '3.9'
+version: "3.9"
 
 services:
   db:
     image: postgres:16-alpine
     container_name: pt2-db
     environment:
-      POSTGRES_USER: pt2_user
-      POSTGRES_PASSWORD: pt2_password
-      POSTGRES_DB: risky
+      POSTGRES_USER: ${DB_USERNAME:-pt2_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pt2_password}
+      POSTGRES_DB: ${DB_NAME:-pt2}
     ports:
-      - '54320:5432'
+      - "54320:5432"
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,9 +27,12 @@ services:
     container_name: pt2-backend
     env_file: .env.development
     ports:
-      - '3000:3000'
+      - "3000:3000"
     volumes:
       - .:/app
+    environment:
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3001}
+      CORS_CREDENTIALS: ${CORS_CREDENTIALS:-true}
     depends_on:
       db:
         condition: service_healthy

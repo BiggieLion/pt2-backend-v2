@@ -4,10 +4,12 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { UserDto } from '@common/dto';
+import { Request } from 'express';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -22,13 +24,20 @@ export class RolesGuard implements CanActivate {
 
     if (!required || required.length === 0) return true;
 
-    const req = context.switchToHttp().getRequest();
-    const user: UserDto | undefined = req?.user;
+    const req: Request = context.switchToHttp().getRequest();
+    const user = req.user as UserDto | undefined;
 
+    if (!user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     // Normalize roles to a lowercased array; our UserDto defines a single 'rol' string
     const userRoles: string[] = user?.rol
       ? [String(user.rol).toLowerCase()]
       : [];
+
+    if (userRoles.length === 0) {
+      throw new ForbiddenException('User has no roles assigned');
+    }
 
     const has = required.some((role) => userRoles.includes(role.toLowerCase()));
 
