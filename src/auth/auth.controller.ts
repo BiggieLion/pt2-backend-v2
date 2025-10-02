@@ -34,7 +34,7 @@ export class AuthController {
     const data: AuthTokens = await this.authSvc.login(dto);
     return {
       data: {
-        accessToken: data.accessToken ?? data.idToken,
+        accessToken: data.idToken ?? data.accessToken,
         expiresIn: data.expiresIn,
         refreshToken: data.refreshToken,
         tokenType: 'Bearer',
