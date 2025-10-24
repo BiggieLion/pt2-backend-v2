@@ -1,5 +1,6 @@
 import {
   CreateDateColumn,
+  DeleteDateColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -13,6 +14,9 @@ export abstract class AbstractEntity<T> {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deletedAt: Date;
 
   constructor(partial?: Partial<T>) {
     if (partial) {

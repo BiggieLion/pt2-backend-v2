@@ -12,7 +12,17 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
           },
         },
         redact: {
-          paths: ['req.headers.authorization', 'req.headers.cookie'],
+          // redact auth headers, cookies and common sensitive fields in bodies
+          paths: [
+            'req.headers.authorization',
+            'req.headers.cookie',
+            'req.body.password',
+            'req.body.*.password',
+            'req.body.rfc',
+            'req.body.curp',
+            'req.body.email',
+            'user.password',
+          ],
           censor: '[REDACTED]',
         },
         transport: {

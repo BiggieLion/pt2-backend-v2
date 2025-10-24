@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { RequestModule } from './request/request.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     LoggerModule,
     RequesterModule,
     AuthModule,
+    RequestModule,
   ],
   controllers: [AppController],
   providers: [

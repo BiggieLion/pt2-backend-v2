@@ -26,7 +26,8 @@
       "@config/*": ["src/config/*"],
       "@shared/*": ["src/shared/*"],
       "@requester/*": ["src/requester/*"],
-      "@auth/*": ["src/auth/*"]
+      "@auth/*": ["src/auth/*"],
+      "@request/*": ["src/request/*"]
     }
   }
 }

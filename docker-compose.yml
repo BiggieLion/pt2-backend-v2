@@ -5,9 +5,9 @@ services:
     image: postgres:16-alpine
     container_name: pt2-db
     environment:
-      POSTGRES_USER: ${DB_USERNAME:-pt2_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-pt2_password}
-      POSTGRES_DB: ${DB_NAME:-pt2}
+      POSTGRES_USER: pt2_user
+      POSTGRES_PASSWORD: pt2_password
+      POSTGRES_DB: risky
     ports:
       - "54320:5432"
     healthcheck:

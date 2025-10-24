@@ -187,6 +187,6 @@ export class RequesterService {
       }
     }
 
-    await this.requesterRepo.findOneAndDelete({ id });
+    await this.requesterRepo.findOneAndSoftDelete({ id });
   }
 }

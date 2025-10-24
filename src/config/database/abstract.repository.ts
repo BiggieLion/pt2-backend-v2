@@ -76,7 +76,9 @@ export abstract class AbstractRepository<T extends AbstractEntity<T>> {
     return this.findOne(where);
   }
 
-  async findOneAndDelete(where: FindOptionsWhere<T>): Promise<DeleteResult> {
-    return this.itemsRepository.delete(where);
+  async findOneAndSoftDelete(
+    where: FindOptionsWhere<T>,
+  ): Promise<DeleteResult> {
+    return this.itemsRepository.softDelete(where);
   }
 }

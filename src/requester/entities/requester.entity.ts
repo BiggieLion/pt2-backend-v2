@@ -1,5 +1,6 @@
-import { AbstractEntity } from '../../config/database/abstract.entity';
-import { Column, Entity } from 'typeorm';
+import { AbstractEntity } from '@config/database';
+import { Request } from '@request/entities/request.entity';
+import { Column, Entity, OneToMany } from 'typeorm';
 
 @Entity('requester')
 export class Requester extends AbstractEntity<Requester> {
@@ -15,7 +16,22 @@ export class Requester extends AbstractEntity<Requester> {
   @Column({ nullable: false, type: 'varchar', unique: true })
   rfc: string;
 
-  @Column({ nullable: false, type: 'numeric' })
+  @Column({
+    nullable: false,
+    type: 'bigint',
+    transformer: {
+      // Backend sends 123.45 -> database stores as 12345 cents
+      to: (value: number): string => {
+        if (typeof value !== 'number' || Number.isNaN(value)) return '0';
+        return Math.round(value * 100).toString();
+      },
+      // Database return '12345' cents -> backend gets 123.45
+      from: (value: string): number => {
+        const cents: number = parseInt(value, 10);
+        return cents / 100;
+      },
+    },
+  })
   monthly_income: number;
 
   @Column({ nullable: false, type: 'varchar', unique: true })
@@ -71,4 +87,10 @@ export class Requester extends AbstractEntity<Requester> {
 
   @Column({ nullable: false, type: 'boolean' })
   has_own_realty: boolean;
+
+  @Column({ nullable: false, type: 'boolean', default: false })
+  has_active_request: boolean;
+
+  @OneToMany(() => Request, (request: Request) => request.requester)
+  requests: Request[];
 }

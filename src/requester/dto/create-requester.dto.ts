@@ -13,6 +13,7 @@ import {
   MinLength,
   IsString,
   Matches,
+  IsOptional,
 } from 'class-validator';
 
 const toUpperTrim = (v: unknown): string =>
@@ -140,4 +141,8 @@ export class CreateRequesterDto {
   @IsBoolean()
   @IsNotEmpty()
   has_own_realty: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  has_active_request: boolean;
 }
