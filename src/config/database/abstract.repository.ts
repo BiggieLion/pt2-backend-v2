@@ -45,8 +45,19 @@ export abstract class AbstractRepository<T extends AbstractEntity<T>> {
     });
 
     if (!entity) {
+      // Avoid logging full objects (may contain PII/secrets). Log keys/shape only.
+      const whereKeys =
+        where && typeof where === 'object' ? Object.keys(where as object) : [];
+      const selectKeys =
+        select && typeof select === 'object'
+          ? Object.keys(select as object)
+          : [];
+      const relationsKeys =
+        relations && typeof relations === 'object'
+          ? Object.keys(relations as object)
+          : [];
       this.logger.warn(
-        `Entity not found with the next conditions: ${JSON.stringify(where)} \n ${JSON.stringify(select)} \n ${JSON.stringify(relations)} `,
+        `Entity not found. where keys: [${whereKeys.join(', ')}], select keys: [${selectKeys.join(', ')}], relations: [${relationsKeys.join(', ')}]`,
       );
 
       throw new NotFoundException('Entity not found');
