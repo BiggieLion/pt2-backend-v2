@@ -9,6 +9,10 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import type { Express } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { CustomResponseDto } from '@common/dto';
+import { AuthModule } from '@auth/auth.module';
+import { RequesterModule } from '@requester/requester.module';
+import { RequestModule } from '@request/request.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -66,10 +70,10 @@ async function bootstrap() {
       },
       'JWT-auth',
     )
-    .addTag('App', 'App management endpoints')
-    .addTag('Auth', 'Authentication and authorization endpoints')
-    .addTag('Requester', 'Requester management endpoints')
-    .addTag('Request', 'Credit request management endpoints')
+    .addTag('app', 'App management endpoints')
+    .addTag('auth', 'Authentication and authorization endpoints')
+    .addTag('requester', 'Requester management endpoints')
+    .addTag('request', 'Credit request management endpoints')
     .addServer('http://localhost:3000', 'Development server')
     .addServer('https://api.production.com', 'Production server')
     .build();
@@ -78,6 +82,8 @@ async function bootstrap() {
     SwaggerModule.createDocument(app, swaggerOptions, {
       operationIdFactory: (controllerKey: string, methodKey: string) =>
         methodKey,
+      include: [AppModule, AuthModule, RequesterModule, RequestModule],
+      extraModels: [CustomResponseDto],
     });
 
   SwaggerModule.setup('api/docs', app, documentFactory, {
