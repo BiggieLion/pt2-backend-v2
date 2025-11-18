@@ -9,6 +9,7 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { ConfigService } from '@nestjs/config';
 import type { Express } from 'express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -49,6 +50,18 @@ async function bootstrap() {
     new ClassSerializerInterceptor(reflector),
     new ResponseInterceptor(),
   );
+
+  const swaggerOptions = new DocumentBuilder()
+    .setTitle('PT2 Backend API')
+    .setDescription('REST API documentation for the PT2 Backend')
+    .setVersion('2.0.0')
+    .addBearerAuth()
+    .build();
+
+  const documentFactory = () =>
+    SwaggerModule.createDocument(app, swaggerOptions);
+
+  SwaggerModule.setup('api/docs', app, documentFactory);
   await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();

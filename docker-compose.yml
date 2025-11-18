@@ -22,6 +22,7 @@ services:
     tty: true
     build:
       context: .
+      dockerfile: ./Dockerfile
       target: development
     command: npm run start:dev
     container_name: pt2-backend
