@@ -1,4 +1,4 @@
-# Node
+# Dependencies
 node_modules
 npm-debug.log*
 yarn-debug.log*
@@ -16,21 +16,36 @@ coverage
 # VCS
 .git
 .gitignore
+.github
 
 # IDE/editor
 .vscode
 .idea
 *.sublime-workspace
 
-# Tests and misc
+# Tests
 test
 .nyc_output
+*.spec.ts
+*.e2e-spec.ts
 
-# Env files (pass env via compose or CI/CD secrets)
+# Environment files (passed via compose)
 .env
 .env.*
-!.env.example
+.env.local
+.env.*.local
 
-# Compose files are not needed in the image build context
-docker-compose.yml
-docker-compose.prod.yml
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+*.md
+docs
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci

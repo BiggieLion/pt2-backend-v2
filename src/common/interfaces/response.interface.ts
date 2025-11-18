@@ -1,7 +1,7 @@
 export interface CustomResponse {
   statusCode: number;
   success: boolean;
-  timestamp: number;
+  timestamp: string;
   path: string;
   action: 'CONTINUE' | 'CANCEL';
   message: string;

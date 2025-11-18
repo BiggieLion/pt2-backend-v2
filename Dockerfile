@@ -1,27 +1,80 @@
-FROM node:lts-slim AS development
+# ============================================
+# Stage 1: Base - Common dependencies
+# ============================================
+FROM node:lts-alpine AS base
 
-ENV NODE_ENV=development
+WORKDIR /usr/src/app
 
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
-COPY tsconfig*.json ./
-COPY nest-cli.json ./
-COPY src ./src
+# Installing dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
 
-RUN npx nest build
+# Copying package files
+COPY package*.json ./
 
-FROM node:lts-slim AS production
+# ================================================
+# Stage 2: Development - With source code mounting
+# ================================================
+FROM base AS development
 
-ENV NODE_ENV=production
+# Install ALL dependencies (including dev dependencies)
+RUN npm i
 
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --no-audit --no-fund
-COPY --from=development /app/dist ./dist
+# Copy source code (will be overridden by volume mount in docker-compose)
+COPY . .
 
-# Run as non-root for security
-RUN useradd -r -u 1001 nodeusr && chown -R nodeusr:nodeusr /app
-USER nodeusr
+# Exposing port
+EXPOSE 3000
 
-CMD [ "node", "dist/main" ]
+# Use dumb-init and run in watch mode
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["npm", "run", "start:dev"]
+
+# ============================================
+# Stage 3: Builder - Compile TypeScript
+# ============================================
+FROM base AS builder
+
+# Install all dependencies for building
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Remove dev dependencies
+RUN npm prune --production
+
+# ============================================
+# Stage 4: Production - Minimal runtime
+# ============================================
+FROM node:lts-alpine AS production
+
+# Install dumb-init and create non-root user
+RUN apk add --no-cache dumb-init && \
+    addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001
+
+WORKDIR /usr/src/app
+
+# Copy production dependencies
+COPY --from=builder --chown=nestjs:nodejs /usr/src/app/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder --chown=nestjs:nodejs /usr/src/app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /usr/src/app/package*.json ./
+
+# Switch to non-root user
+USER nestjs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/main.js"]

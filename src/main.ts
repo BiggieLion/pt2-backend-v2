@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AppModule } from './app.module';
-import helmet from 'helmet';
 import { ConfigService } from '@nestjs/config';
 import type { Express } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -14,7 +13,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI });
   // Configure CORS explicitly from configuration
@@ -52,16 +51,43 @@ async function bootstrap() {
   );
 
   const swaggerOptions = new DocumentBuilder()
-    .setTitle('PT2 Backend API')
-    .setDescription('REST API documentation for the PT2 Backend')
+    .setTitle('PT Backend API')
+    .setDescription('REST API documentation for the PT Backend')
     .setVersion('2.0.0')
-    .addBearerAuth()
+    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('App', 'App management endpoints')
+    .addTag('Auth', 'Authentication and authorization endpoints')
+    .addTag('Requester', 'Requester management endpoints')
+    .addTag('Request', 'Credit request management endpoints')
+    .addServer('http://localhost:3000', 'Development server')
+    .addServer('https://api.production.com', 'Production server')
     .build();
 
   const documentFactory = () =>
-    SwaggerModule.createDocument(app, swaggerOptions);
+    SwaggerModule.createDocument(app, swaggerOptions, {
+      operationIdFactory: (controllerKey: string, methodKey: string) =>
+        methodKey,
+    });
 
-  SwaggerModule.setup('api/docs', app, documentFactory);
+  SwaggerModule.setup('api/docs', app, documentFactory, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+    customSiteTitle: 'PT Backend API Docs',
+  });
   await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();

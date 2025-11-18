@@ -35,10 +35,11 @@ export class ResponseInterceptor implements NestInterceptor {
         return {
           statusCode,
           success: statusCode < 400,
-          timestamp: Date.now(),
+          timestamp: new Date().toISOString(),
           path: req.url,
           action: statusCode >= 400 ? 'CANCEL' : 'CONTINUE',
           message,
+          version: '2.0.0',
           data: data ?? {},
         } as CustomResponse;
       }),

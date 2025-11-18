@@ -3,41 +3,55 @@ version: "3.9"
 services:
   db:
     image: postgres:16-alpine
-    container_name: pt2-db
+    container_name: pt2-db-dev
     environment:
-      POSTGRES_USER: pt2_user
-      POSTGRES_PASSWORD: pt2_password
-      POSTGRES_DB: risky
+      POSTGRES_USER: ${DB_USERNAME:-pt2_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pt2_password}
+      POSTGRES_DB: ${DB_NAME:-risky}
     ports:
-      - "54320:5432"
+      - "${DB_PORT:-54320}:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      start_period: 10s
+    networks:
+      - pt2-network
+    restart: unless-stopped
 
   api:
-    tty: true
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: Dockerfile
       target: development
-    command: npm run start:dev
-    container_name: pt2-backend
-    env_file: .env.development
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
+    container_name: pt2-backend-dev
+    env_file:
+      - .env.development
     environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      NODE_ENV: development
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3001}
       CORS_CREDENTIALS: ${CORS_CREDENTIALS:-true}
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - pt2-network
     restart: unless-stopped
 
+networks:
+  pt2-network:
+    driver: bridge
+
 volumes:
-  pgdata:
+  pgdata_dev:
+    driver: local
