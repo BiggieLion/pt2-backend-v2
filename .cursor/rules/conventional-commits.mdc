@@ -1,0 +1,90 @@
+---
+description: Generate conventional commit messages following the Conventional Commits specification
+alwaysApply: true
+---
+
+# Conventional Commit Messages
+
+Follow the Conventional Commits specification when creating commit messages. This ensures standardized, descriptive commit messages that improve code history readability and enable automated tooling.
+
+## Workflow
+
+**When creating commits, follow these steps:**
+
+1. Review changed files with `git status`
+2. Inspect changes with `git diff` or `git diff --cached`
+3. Stage changes with `git add <file>`
+4. Construct commit message using the structure below
+5. Execute the commit with the properly formatted message
+
+## Commit Message Structure
+
+```
+type(scope): description
+
+[optional body]
+
+[optional footer]
+```
+
+### Components
+
+- **type**: Required. One of: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+- **scope**: Optional. The area of the codebase affected (e.g., `auth`, `users`, `api`)
+- **description**: Required. Short, imperative summary (e.g., "add", not "added")
+- **body**: Optional. More detailed explanation
+- **footer**: Optional. Breaking changes or issue references
+
+## Commit Types
+
+- **feat**: A new feature
+- **fix**: A bug fix
+- **docs**: Documentation only changes
+- **style**: Changes that don't affect code meaning (formatting, missing semicolons, etc.)
+- **refactor**: Code change that neither fixes a bug nor adds a feature
+- **perf**: A code change that improves performance
+- **test**: Adding or updating tests
+- **build**: Changes to build system or external dependencies
+- **ci**: Changes to CI configuration files and scripts
+- **chore**: Other changes that don't modify src or test files
+- **revert**: Reverts a previous commit
+
+## Examples
+
+```bash
+# Simple feature
+feat(auth): add JWT token refresh endpoint
+
+# Bug fix with scope
+fix(users): correct email validation regex
+
+# Documentation
+docs: update README with installation instructions
+
+# Refactoring
+refactor(api): improve error handling in controllers
+
+# Chore
+chore: update dependencies to latest versions
+
+# Breaking change
+feat(api)!: change authentication to use Bearer tokens
+
+BREAKING CHANGE: Authentication now requires Bearer token in Authorization header instead of API key
+```
+
+## Validation Rules
+
+- **type**: Must be one of the allowed types (see https://www.conventionalcommits.org/en/v1.0.0/#specification)
+- **scope**: Optional but recommended for clarity
+- **description**: Required. Use imperative mood (e.g., "add", not "added" or "adds")
+- **body**: Optional. Use for additional context or explanation
+- **footer**: Use for breaking changes (BREAKING CHANGE:) or issue references (Closes #123)
+
+## Best Practices
+
+- Keep the description under 72 characters when possible
+- Use the body to explain **what** and **why** vs. **how**
+- Reference issues and pull requests in the footer
+- Use breaking change notation (`!` after type or `BREAKING CHANGE:` in footer) for incompatible changes
+- Be consistent with scope naming across the project
