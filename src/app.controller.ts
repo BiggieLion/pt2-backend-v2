@@ -15,12 +15,12 @@ export class AppController {
 
   @Get('health')
   @ApiOperation({
-    summary: 'Health check',
-    description: 'Checks if the app service is running',
+    summary: 'Global health check',
+    description: 'Single global health endpoint for the API (load balancers, probes)',
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'App service is healthy',
+    description: 'API is healthy',
     schema: {
       allOf: [
         { $ref: getSchemaPath(CustomResponseDto) },
@@ -28,7 +28,7 @@ export class AppController {
           properties: {
             statusCode: { example: 200 },
             success: { example: true },
-            message: { example: 'App service is healthy' },
+            message: { example: 'API is healthy' },
             data: {
               type: 'object',
               example: {},
@@ -38,7 +38,7 @@ export class AppController {
       ],
     },
   })
-  getHello() {
-    return { data: {}, message: 'App service is healthy' };
+  getHealth() {
+    return { data: {}, message: 'API is healthy' };
   }
 }

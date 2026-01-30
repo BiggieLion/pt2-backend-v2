@@ -17,7 +17,7 @@ COPY package*.json ./
 FROM base AS development
 
 # Install ALL dependencies (including dev dependencies)
-RUN npm i
+RUN npm ci
 
 # Copy source code (will be overridden by volume mount in docker-compose)
 COPY . .

@@ -70,7 +70,7 @@ async function bootstrap() {
       },
       'JWT-auth',
     )
-    .addTag('app', 'App management endpoints')
+    .addTag('app', 'Global health endpoint')
     .addTag('auth', 'Authentication and authorization endpoints')
     .addTag('requester', 'Requester management endpoints')
     .addTag('request', 'Credit request management endpoints')
