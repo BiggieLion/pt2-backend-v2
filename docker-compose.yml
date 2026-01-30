@@ -36,6 +36,7 @@ services:
       NODE_ENV: development
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3001}
       CORS_CREDENTIALS: ${CORS_CREDENTIALS:-true}
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "${PORT:-3000}:3000"
     volumes:

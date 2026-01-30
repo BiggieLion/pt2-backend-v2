@@ -23,11 +23,6 @@ import { Throttle } from '@nestjs/throttler';
 export class RequesterController {
   constructor(private readonly requesterSvc: RequesterService) {}
 
-  @Get('health')
-  getHealth(): string {
-    return 'Requester service is healthy';
-  }
-
   @Post()
   @Throttle({ 'requester-create': {} })
   async create(@Body() createRequesterDto: CreateRequesterDto) {

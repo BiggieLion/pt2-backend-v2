@@ -10,6 +10,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { RequestModule } from './request/request.module';
+import { StaffModule } from './staff/staff.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RequestModule } from './request/request.module';
     RequesterModule,
     AuthModule,
     RequestModule,
+    StaffModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Logger,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   AuthTokens,
@@ -39,39 +31,7 @@ import { CustomResponseDto } from '@common/dto/custom-response.dto';
 )
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  protected readonly logger = new Logger(AuthController.name);
   constructor(private readonly authSvc: AuthService) {}
-
-  @Get('health')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Health check',
-    description: 'Checks if the auth service is running',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Auth service is healthy',
-    schema: {
-      allOf: [
-        { $ref: getSchemaPath(CustomResponseDto) },
-        {
-          properties: {
-            statusCode: { example: 200 },
-            success: { example: true },
-            message: { example: 'Auth service is healthy' },
-            data: {
-              type: 'object',
-              example: {},
-            },
-          },
-        },
-      ],
-    },
-  })
-  healthCheck() {
-    this.logger.log('Health check');
-    return { data: {}, message: 'Auth service is healthy' };
-  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
