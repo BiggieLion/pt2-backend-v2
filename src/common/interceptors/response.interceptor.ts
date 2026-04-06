@@ -47,6 +47,7 @@ export class ResponseInterceptor implements NestInterceptor {
       catchError((err: unknown) => {
         const errorStatusCode: number =
           err instanceof HttpException ? err.getStatus() : 500;
+        const isProduction = process.env.NODE_ENV === 'production';
 
         // Derive a safe error message without unsafe member access
         let derivedMessage = 'Internal server error';
@@ -66,15 +67,18 @@ export class ResponseInterceptor implements NestInterceptor {
           } else if (typeof err.message === 'string') {
             derivedMessage = err.message;
           }
-        } else if (typeof err === 'string') {
-          derivedMessage = err;
-        } else if (
-          typeof err === 'object' &&
-          err !== null &&
-          'message' in err &&
-          typeof (err as { message?: unknown }).message === 'string'
-        ) {
-          derivedMessage = (err as { message: string }).message;
+        } else if (!isProduction) {
+          // Only expose unknown error details outside production
+          if (typeof err === 'string') {
+            derivedMessage = err;
+          } else if (
+            typeof err === 'object' &&
+            err !== null &&
+            'message' in err &&
+            typeof (err as { message?: unknown }).message === 'string'
+          ) {
+            derivedMessage = (err as { message: string }).message;
+          }
         }
 
         const errorResponse = {

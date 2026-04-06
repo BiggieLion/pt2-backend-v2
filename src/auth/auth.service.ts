@@ -36,8 +36,14 @@ export class AuthService {
     this.clientId = this.configSvc.getOrThrow<string>('cognito.clientId');
   }
 
+  private maskEmail(email: string): string {
+    const [local, domain] = email.split('@');
+    if (!domain) return '***';
+    return `${local.slice(0, 2)}***@${domain}`;
+  }
+
   async login(dto: LoginUserDto): Promise<AuthTokens> {
-    this.logger.log(`Logging in user: ${dto.email}`);
+    this.logger.log(`Logging in user: ${this.maskEmail(dto.email)}`);
     try {
       const username: string = dto.email.trim().toLowerCase();
       const response: InitiateAuthCommandOutput = await this.client.send(
@@ -77,11 +83,15 @@ export class AuthService {
           : 'Authentication failed';
 
       if (message === 'NotAuthorizedException') {
-        this.logger.warn(`Incorrect username or password for: ${dto.email}`);
+        this.logger.warn(
+          `Incorrect username or password for: ${this.maskEmail(dto.email)}`,
+        );
         throw new UnauthorizedException('Incorrect username or password');
       }
       if (message === 'UserNotFoundException') {
-        this.logger.warn(`User with email not found: ${dto.email}`);
+        this.logger.warn(
+          `User with email not found: ${this.maskEmail(dto.email)}`,
+        );
         throw new UnauthorizedException('User not found');
       }
       throw new UnauthorizedException(message);
@@ -91,7 +101,9 @@ export class AuthService {
   async forgotPassword(
     dto: ForgotPasswordDto,
   ): Promise<{ delivery?: unknown }> {
-    this.logger.log(`Initiating forgot password for user: ${dto.email}`);
+    this.logger.log(
+      `Initiating forgot password for user: ${this.maskEmail(dto.email)}`,
+    );
     try {
       const response: ForgotPasswordCommandOutput = await this.client.send(
         new ForgotPasswordCommand({
@@ -110,7 +122,9 @@ export class AuthService {
           ? (err as { name: string }).name
           : 'Failed to initiate password reset';
       if (message === 'UserNotFoundException') {
-        this.logger.warn(`User with email not found: ${dto.email}`);
+        this.logger.warn(
+          `User with email not found: ${this.maskEmail(dto.email)}`,
+        );
         return { delivery: undefined };
       }
       this.logger.error('Failed to initiate password reset', err as Error);
@@ -121,7 +135,9 @@ export class AuthService {
   async confirmForgotPassword(
     dto: ConfirmForgotPasswordDto,
   ): Promise<{ success: true }> {
-    this.logger.log(`Confirming forgot password for user: ${dto.email}`);
+    this.logger.log(
+      `Confirming forgot password for user: ${this.maskEmail(dto.email)}`,
+    );
     try {
       await this.client.send(
         new ConfirmForgotPasswordCommand({
@@ -145,11 +161,15 @@ export class AuthService {
         message === 'ExpiredCodeException' ||
         message === 'CodeMismatchException'
       ) {
-        this.logger.warn(`Expired or invalid code for: ${dto.email}`);
+        this.logger.warn(
+          `Expired or invalid code for: ${this.maskEmail(dto.email)}`,
+        );
         throw new BadRequestException('Invalid or expired code');
       }
       if (message === 'InvalidPasswordException') {
-        this.logger.warn(`Password does not meet policy for: ${dto.email}`);
+        this.logger.warn(
+          `Password does not meet policy for: ${this.maskEmail(dto.email)}`,
+        );
         throw new BadRequestException('Password does not meet policy');
       }
       this.logger.error('Failed to confirm password reset', err as Error);

@@ -13,11 +13,14 @@ import { CustomResponseDto } from '@common/dto';
 import { AuthModule } from '@auth/auth.module';
 import { RequesterModule } from '@requester/requester.module';
 import { RequestModule } from '@request/request.module';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
+  app.enableShutdownHooks();
+  app.use(helmet());
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI });
   // Configure CORS explicitly from configuration
@@ -28,7 +31,7 @@ async function bootstrap() {
         .map((o) => o.trim())
         .filter((o) => o.length > 0)
     : ['http://localhost:3000'];
-  const corsCredentials = config.get<boolean>('cors.credentials') ?? true;
+  const corsCredentials = config.get<boolean>('cors.credentials') ?? false;
   app.enableCors({ origin: corsOrigins, credentials: corsCredentials });
   // Trust proxy if running behind reverse proxy (affects secure cookies)
   const httpAdapter = app.getHttpAdapter();

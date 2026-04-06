@@ -19,9 +19,6 @@ export class Staff extends AbstractEntity<Staff> {
   email: string;
 
   @Column({ nullable: false, type: 'varchar' })
-  password: string;
-
-  @Column({ nullable: false, type: 'varchar' })
   sub: string;
 
   @Column({ nullable: false, type: 'char' })
