@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ResponseAction } from '../enums/response-action.enum';
 
-export class CustomResponseDto<T = any> {
+export class CustomResponseDto<T = unknown> {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
@@ -23,10 +24,10 @@ export class CustomResponseDto<T = any> {
   path: string;
 
   @ApiProperty({
-    enum: ['CONTINUE', 'CANCEL'],
+    enum: ResponseAction,
     description: 'Action status of the response',
   })
-  action: 'CONTINUE' | 'CANCEL';
+  action: ResponseAction;
 
   @ApiProperty({
     example: 'Operation completed successfully',

@@ -1,6 +1,7 @@
 import { AbstractEntity } from '@config/database';
 import { Request } from '@request/entities/request.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
+import { MoneyTransformer } from '@common/transformers/money.transformer';
 
 @Entity('requester')
 export class Requester extends AbstractEntity<Requester> {
@@ -16,22 +17,7 @@ export class Requester extends AbstractEntity<Requester> {
   @Column({ nullable: false, type: 'varchar', unique: true })
   rfc: string;
 
-  @Column({
-    nullable: false,
-    type: 'bigint',
-    transformer: {
-      // Backend sends 123.45 -> database stores as 12345 cents
-      to: (value: number): string => {
-        if (typeof value !== 'number' || Number.isNaN(value)) return '0';
-        return Math.round(value * 100).toString();
-      },
-      // Database return '12345' cents -> backend gets 123.45
-      from: (value: string): number => {
-        const cents: number = parseInt(value, 10);
-        return cents / 100;
-      },
-    },
-  })
+  @Column({ nullable: false, type: 'bigint', transformer: MoneyTransformer })
   monthly_income: number;
 
   @Column({ nullable: false, type: 'varchar', unique: true })

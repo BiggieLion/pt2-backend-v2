@@ -21,6 +21,7 @@ import {
   LoginUserDto,
   RefreshTokenDto,
 } from './dto';
+import { getCognitoErrorName } from '@common/utils/error.util';
 
 @Injectable()
 export class AuthService {
@@ -74,27 +75,23 @@ export class AuthService {
         tokenType: auth.TokenType,
       };
     } catch (err: unknown) {
-      const message =
-        typeof err === 'object' &&
-        err !== null &&
-        'name' in err &&
-        typeof (err as { name?: string }).name === 'string'
-          ? (err as { name: string }).name
-          : 'Authentication failed';
+      const name = getCognitoErrorName(err);
 
-      if (message === 'NotAuthorizedException') {
+      if (name === 'NotAuthorizedException') {
         this.logger.warn(
           `Incorrect username or password for: ${this.maskEmail(dto.email)}`,
         );
         throw new UnauthorizedException('Incorrect username or password');
       }
-      if (message === 'UserNotFoundException') {
+      if (name === 'UserNotFoundException') {
         this.logger.warn(
           `User with email not found: ${this.maskEmail(dto.email)}`,
         );
         throw new UnauthorizedException('User not found');
       }
-      throw new UnauthorizedException(message);
+
+      this.logger.error('Login failed', (err as Error)?.stack);
+      throw new UnauthorizedException('Authentication failed');
     }
   }
 
@@ -114,21 +111,17 @@ export class AuthService {
 
       return { delivery: response.CodeDeliveryDetails };
     } catch (err: unknown) {
-      const message =
-        typeof err === 'object' &&
-        err !== null &&
-        'name' in err &&
-        typeof (err as { name?: string }).name === 'string'
-          ? (err as { name: string }).name
-          : 'Failed to initiate password reset';
-      if (message === 'UserNotFoundException') {
+      const name = getCognitoErrorName(err);
+
+      if (name === 'UserNotFoundException') {
         this.logger.warn(
           `User with email not found: ${this.maskEmail(dto.email)}`,
         );
         return { delivery: undefined };
       }
-      this.logger.error('Failed to initiate password reset', err as Error);
-      throw new BadRequestException(message);
+
+      this.logger.error('Failed to initiate password reset', (err as Error)?.stack);
+      throw new BadRequestException('Failed to initiate password reset');
     }
   }
 
@@ -150,30 +143,23 @@ export class AuthService {
 
       return { success: true };
     } catch (err: unknown) {
-      const message =
-        typeof err === 'object' &&
-        err !== null &&
-        'name' in err &&
-        typeof (err as { name?: string }).name === 'string'
-          ? (err as { name: string }).name
-          : 'Failed to confirm password reset';
-      if (
-        message === 'ExpiredCodeException' ||
-        message === 'CodeMismatchException'
-      ) {
+      const name = getCognitoErrorName(err);
+
+      if (name === 'ExpiredCodeException' || name === 'CodeMismatchException') {
         this.logger.warn(
           `Expired or invalid code for: ${this.maskEmail(dto.email)}`,
         );
         throw new BadRequestException('Invalid or expired code');
       }
-      if (message === 'InvalidPasswordException') {
+      if (name === 'InvalidPasswordException') {
         this.logger.warn(
           `Password does not meet policy for: ${this.maskEmail(dto.email)}`,
         );
         throw new BadRequestException('Password does not meet policy');
       }
-      this.logger.error('Failed to confirm password reset', err as Error);
-      throw new BadRequestException(message);
+
+      this.logger.error('Failed to confirm password reset', (err as Error)?.stack);
+      throw new BadRequestException('Failed to reset password');
     }
   }
 
@@ -204,17 +190,14 @@ export class AuthService {
         tokenType: auth.TokenType,
       };
     } catch (err: unknown) {
-      const message =
-        typeof err === 'object' &&
-        err !== null &&
-        'name' in err &&
-        typeof (err as { name?: string }).name === 'string'
-          ? (err as { name: string }).name
-          : 'Failed to refresh token';
-      if (message === 'NotAuthorizedException') {
+      const name = getCognitoErrorName(err);
+
+      if (name === 'NotAuthorizedException') {
         throw new UnauthorizedException('Invalid or expired refresh token');
       }
-      throw new UnauthorizedException(message);
+
+      this.logger.error('Token refresh failed', (err as Error)?.stack);
+      throw new UnauthorizedException('Token refresh failed');
     }
   }
 }

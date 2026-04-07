@@ -8,10 +8,11 @@ import {
 import { Request, Response } from 'express';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { DataResponse, CustomResponse } from '../interfaces';
+import { ResponseAction } from '../enums/response-action.enum';
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<CustomResponse> {
     const req: Request = context.switchToHttp().getRequest();
     const res: Response = context.switchToHttp().getResponse();
     const { statusCode } = res;
@@ -37,11 +38,11 @@ export class ResponseInterceptor implements NestInterceptor {
           success: statusCode < 400,
           timestamp: new Date().toISOString(),
           path: req.url,
-          action: statusCode >= 400 ? 'CANCEL' : 'CONTINUE',
+          action: statusCode >= 400 ? ResponseAction.CANCEL : ResponseAction.CONTINUE,
           message,
           version: '2.0.0',
           data: data ?? {},
-        } as CustomResponse;
+        };
       }),
 
       catchError((err: unknown) => {
@@ -81,13 +82,14 @@ export class ResponseInterceptor implements NestInterceptor {
           }
         }
 
-        const errorResponse = {
+        const errorResponse: CustomResponse = {
           statusCode: errorStatusCode,
           success: false,
-          timestamp: Date.now(),
+          timestamp: new Date().toISOString(),
           path: req.url,
-          action: 'CANCEL',
+          action: ResponseAction.CANCEL,
           message: derivedMessage,
+          version: '2.0.0',
           data: {},
         };
 

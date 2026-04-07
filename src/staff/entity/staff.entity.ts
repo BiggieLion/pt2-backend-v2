@@ -1,5 +1,5 @@
 import { AbstractEntity } from '@config/database';
-import { Column, CreateDateColumn, Entity, UpdateDateColumn } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 
 @Entity('staff')
 export class Staff extends AbstractEntity<Staff> {
@@ -31,21 +31,8 @@ export class Staff extends AbstractEntity<Staff> {
   address: string;
 
   @Column({ nullable: false, type: 'varchar' })
-  rol: string;
+  role: string;
 
   @Column({ nullable: false, type: 'boolean', default: false })
   is_eval_credit: boolean;
-
-  @CreateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-  })
-  created_at: Date;
-
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-    onUpdate: 'CURRENT_TIMESTAMP(6)',
-  })
-  updated_at: Date;
 }

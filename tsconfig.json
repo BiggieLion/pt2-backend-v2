@@ -18,16 +18,17 @@
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
     "paths": {
       "@common/*": ["src/common/*"],
       "@config/*": ["src/config/*"],
       "@shared/*": ["src/shared/*"],
       "@requester/*": ["src/requester/*"],
       "@auth/*": ["src/auth/*"],
-      "@request/*": ["src/request/*"]
+      "@request/*": ["src/request/*"],
+      "@staff/*": ["src/staff/*"]
     }
   }
 }

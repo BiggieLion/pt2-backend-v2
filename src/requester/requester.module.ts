@@ -17,5 +17,6 @@ import { RequesterRepository } from './requester.repository';
   ],
   providers: [RequesterService, RequesterRepository],
   controllers: [RequesterController],
+  exports: [RequesterRepository],
 })
 export class RequesterModule {}

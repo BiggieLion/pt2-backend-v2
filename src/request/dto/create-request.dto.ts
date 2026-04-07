@@ -33,7 +33,7 @@ export class CreateRequestDto {
   @Min(0)
   guarantee_value?: number;
 
-  @IsUUID()
+  @IsUUID('4')
   @IsNotEmpty()
   requester_id: string;
 }

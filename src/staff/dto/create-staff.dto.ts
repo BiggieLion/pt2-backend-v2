@@ -64,5 +64,5 @@ export class CreateStaffDto {
 
   @IsString()
   @IsNotEmpty()
-  rol: string;
+  role: string;
 }

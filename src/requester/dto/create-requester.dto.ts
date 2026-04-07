@@ -1,4 +1,9 @@
 import { CURP_REGEX, PASSWORD_REGEX, RFC_REGEX } from '@shared/constants/regex';
+import {
+  toUpperTrim,
+  toLowerTrim,
+  toTrim,
+} from '@common/transformers/string.transformer';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -15,12 +20,6 @@ import {
   Matches,
   IsOptional,
 } from 'class-validator';
-
-const toUpperTrim = (v: unknown): string =>
-  typeof v === 'string' ? v.toUpperCase().trim() : '';
-const toLowerTrim = (v: unknown): string =>
-  typeof v === 'string' ? v.toLowerCase().trim() : '';
-const toTrim = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 
 export class CreateRequesterDto {
   @Transform(({ value }) => toUpperTrim(value))
@@ -144,5 +143,5 @@ export class CreateRequesterDto {
 
   @IsBoolean()
   @IsOptional()
-  has_active_request: boolean;
+  has_active_request: boolean = false;
 }

@@ -1,14 +1,17 @@
+import { ResponseAction } from '../enums/response-action.enum';
+
 export interface CustomResponse {
   statusCode: number;
   success: boolean;
   timestamp: string;
   path: string;
-  action: 'CONTINUE' | 'CANCEL';
+  action: ResponseAction;
   message: string;
-  data: any;
+  version: string;
+  data: unknown;
 }
 
 export interface DataResponse {
-  data: any;
+  data: unknown;
   message?: string;
 }
