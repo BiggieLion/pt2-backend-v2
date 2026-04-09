@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/biggielion/Documents/UPIITA/pt2/codes/pt2-backend-v2/.claude/hooks/check-destructive-commands.sh",
+            "timeout": 10,
+            "statusMessage": "Verificando seguridad del comando..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; [[ \"$f\" == *.ts ]] && npx prettier --write \"$f\"; } 2>/dev/null || true",
+            "statusMessage": "Formatting..."
+          },
+          {
+            "type": "command",
+            "command": "/Users/biggielion/Documents/UPIITA/pt2/codes/pt2-backend-v2/.claude/hooks/run-related-tests.sh",
+            "timeout": 60,
+            "statusMessage": "Ejecutando tests relacionados..."
+          },
+          {
+            "type": "agent",
+            "timeout": 120,
+            "statusMessage": "Generando tests...",
+            "prompt": "You are a test-generation agent for a NestJS 11 + TypeScript project (credit/loans management system). Your only job is to create a missing spec file for a recently modified source file.\n\nHook input JSON:\n$ARGUMENTS\n\n## Step 1 — extract the file path\nParse the JSON above. The file path is at `.tool_input.file_path`. If it is empty or missing, stop immediately and do nothing.\n\n## Step 2 — decide whether to generate tests\nSkip (do nothing) if ANY of the following is true:\n- The path does not end in `.ts`\n- The path ends in `.spec.ts` or `.d.ts`\n- The filename matches: `*.module.ts`, `*.entity.ts`, `*.dto.ts`, `index.ts`, `main.ts`, `configuration.ts`, `*.transformer.ts`, `*.enum.ts`, `*.constant.ts`, `*.interface.ts`, `*.decorator.ts` (decorators are OK to skip unless they contain logic)\n- The computed spec path (`replace .ts → .spec.ts`) **already exists on disk** — check with the Read tool; if the file exists, stop.\n\n## Step 3 — read the source file\nRead the full source file at the extracted path.\n\n## Step 4 — generate the spec\nWrite a complete unit test file at the spec path (`<original-path-without-.ts>.spec.ts`) following ALL of these rules:\n\n### File structure\n```typescript\nimport { Test, TestingModule } from '@nestjs/testing';\n// ... other imports using path aliases (@auth/*, @requester/*, @common/*, etc.)\n\ndescribe('<ClassName>', () => {\n  let subject: <ClassName>;\n  // mock variables...\n\n  beforeEach(async () => {\n    // setup mocks and TestingModule\n  });\n\n  it('should be defined', () => {\n    expect(subject).toBeDefined();\n  });\n\n  // test cases...\n});\n```\n\n### Test naming — ALWAYS in Spanish\n`it('deberia [accion] cuando [condicion]', ...)`\n\nExamples:\n- `it('deberia lanzar NotFoundException cuando el id no existe')`\n- `it('deberia retornar el DTO sin el campo sub')`\n- `it('deberia hacer rollback en Cognito cuando falla la BD')`\n\n### AAA pattern in every it()\n```typescript\nit('deberia ...', async () => {\n  // Arrange\n  mockRepo.findOne.mockResolvedValue({ id: '1', email: 'a@b.com' });\n  // Act\n  const result = await subject.someMethod('1');\n  // Assert\n  expect(result).toMatchObject({ id: '1' });\n});\n```\n\n### What to mock\n- Domain repositories (e.g. `RequesterRepository`) → plain object with `jest.fn()` for each method used\n- `CognitoIdentityProviderClient` → `{ send: jest.fn() }`\n- `ConfigService` → `{ getOrThrow: jest.fn((k: string) => configMap[k]) }` with a local `configMap` constant\n- For controllers → mock the entire service: `{ create: jest.fn(), getX: jest.fn(), ... }`\n- NEVER use `getRepositoryToken` or mock TypeORM `Repository<T>` directly\n\n### Coverage to include for services\n1. Happy path — correct return value + verify mock calls\n2. Each Cognito error mapped to its NestJS HTTP exception\n3. Rollback logic (Cognito user deleted when DB save fails)\n4. Sensitive fields excluded from return (no `sub`, no `password` in view)\n\n### Coverage to include for controllers\n1. Each endpoint delegates to the service method\n2. Returns `{ data, message }` shape\n3. Uses `ParseUUIDPipe` for UUID params (verify the call reaches the service)\n\n### Coverage to include for guards/strategies\n1. Allows valid input\n2. Throws `UnauthorizedException` or `ForbiddenException` on invalid input\n\n### Path aliases — always use them\n```typescript\nimport { RequesterRepository } from '@requester/requester.repository';\nimport { ConfigService } from '@nestjs/config';\nimport { getCognitoErrorName } from '@common/utils/error.util';\n```\n\n### Mock data — use realistic values\n```typescript\nconst mockDto = {\n  email: 'test@example.com',\n  curp: 'LOOA531113HTCPBN07',\n  rfc: 'LOOA531113AB1',\n  // ...\n};\n```\n\n## Step 5 — write the file\nWrite the generated spec to the computed spec path using the Write tool. Do not explain what you wrote. Just write the file and stop."
+          }
+        ]
+      }
+    ]
+  }
+}

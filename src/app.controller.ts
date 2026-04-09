@@ -16,7 +16,8 @@ export class AppController {
   @Get('health')
   @ApiOperation({
     summary: 'Global health check',
-    description: 'Single global health endpoint for the API (load balancers, probes)',
+    description:
+      'Single global health endpoint for the API (load balancers, probes)',
   })
   @ApiResponse({
     status: HttpStatus.OK,

@@ -120,7 +120,10 @@ export class AuthService {
         return { delivery: undefined };
       }
 
-      this.logger.error('Failed to initiate password reset', (err as Error)?.stack);
+      this.logger.error(
+        'Failed to initiate password reset',
+        (err as Error)?.stack,
+      );
       throw new BadRequestException('Failed to initiate password reset');
     }
   }
@@ -158,7 +161,10 @@ export class AuthService {
         throw new BadRequestException('Password does not meet policy');
       }
 
-      this.logger.error('Failed to confirm password reset', (err as Error)?.stack);
+      this.logger.error(
+        'Failed to confirm password reset',
+        (err as Error)?.stack,
+      );
       throw new BadRequestException('Failed to reset password');
     }
   }

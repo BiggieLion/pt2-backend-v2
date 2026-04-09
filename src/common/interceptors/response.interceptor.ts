@@ -12,7 +12,10 @@ import { ResponseAction } from '../enums/response-action.enum';
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<CustomResponse> {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<CustomResponse> {
     const req: Request = context.switchToHttp().getRequest();
     const res: Response = context.switchToHttp().getResponse();
     const { statusCode } = res;
@@ -38,7 +41,8 @@ export class ResponseInterceptor implements NestInterceptor {
           success: statusCode < 400,
           timestamp: new Date().toISOString(),
           path: req.url,
-          action: statusCode >= 400 ? ResponseAction.CANCEL : ResponseAction.CONTINUE,
+          action:
+            statusCode >= 400 ? ResponseAction.CANCEL : ResponseAction.CONTINUE,
           message,
           version: '2.0.0',
           data: data ?? {},

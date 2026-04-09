@@ -32,7 +32,12 @@ export class Request extends AbstractEntity<Request> {
   @Column({ nullable: false, type: 'boolean', default: false })
   has_guarantee: boolean;
 
-  @Column({ nullable: false, default: 0, type: 'bigint', transformer: MoneyTransformer })
+  @Column({
+    nullable: false,
+    default: 0,
+    type: 'bigint',
+    transformer: MoneyTransformer,
+  })
   guarantee_value: number;
 
   @ManyToOne(() => Requester, (requester: Requester) => requester.requests, {
