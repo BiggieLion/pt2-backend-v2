@@ -1,0 +1,213 @@
+{
+  "info": {
+    "name": "PT Backend API",
+    "description": "REST API collection for the PT Backend (NestJS).\n\n- Base URL uses `{{baseUrl}}` (default: http://localhost:3000/api)\n- Protected endpoints use Bearer token: set `{{accessToken}}` after login or refresh",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "accessToken", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{accessToken}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "App",
+      "description": "Global health endpoint",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": "Single global health endpoint for the API (load balancers, probes). No auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication and authorization endpoints. No Bearer auth on these requests.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"P@ssw0rd!\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/login",
+            "description": "Authenticate user and return JWT tokens. Use the returned accessToken (or idToken) as Bearer token for protected endpoints."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/forgot-password",
+            "description": "Send password reset code to user email (if email exists)."
+          }
+        },
+        {
+          "name": "Confirm Password Reset",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"NewSecureP@ssw0rd\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/confirm-password",
+            "description": "Reset password using the code sent via email."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/refresh",
+            "description": "Get new access token using refresh token. Add a collection variable `refreshToken` if you want to use it here."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requester",
+      "description": "Requester management. Create is public; other endpoints require JWT and specific roles (requester / analyst / supervisor).",
+      "item": [
+        {
+          "name": "Create Requester",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"curp\": \"CURP180000HDFLRN01\",\n  \"rfc\": \"CUR180000ABC\",\n  \"firstname\": \"Juan\",\n  \"lastname\": \"Pérez López\",\n  \"monthly_income\": 15000.5,\n  \"email\": \"juan.perez@example.com\",\n  \"password\": \"P@ssw0rd!\",\n  \"address\": \"Calle Principal 123, Col. Centro\",\n  \"gender\": \"M\",\n  \"count_children\": 2,\n  \"count_adults\": 2,\n  \"count_family_members\": 4,\n  \"civil_status\": \"Casado\",\n  \"education_level\": \"Universidad\",\n  \"occupation_type\": 1,\n  \"days_employed\": 365,\n  \"birthdate\": \"1990-01-15\",\n  \"has_own_car\": true,\n  \"has_own_realty\": false\n}"
+            },
+            "url": "{{baseUrl}}/v1/requester",
+            "description": "Create a new requester. Throttled (requester-create). No auth."
+          }
+        },
+        {
+          "name": "Get Current Requester",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/v1/requester",
+            "description": "Get the requester profile for the authenticated user. Requires role: requester."
+          }
+        },
+        {
+          "name": "Get Requester by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/requester/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "requester", ":id"],
+              "variable": [
+                { "key": "id", "value": "00000000-0000-0000-0000-000000000000" }
+              ]
+            },
+            "description": "Get requester by UUID. Requires role: analyst or supervisor."
+          }
+        },
+        {
+          "name": "Update Current Requester",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Nueva dirección 456\",\n  \"monthly_income\": 18000\n}"
+            },
+            "url": "{{baseUrl}}/v1/requester",
+            "description": "Update the authenticated requester. All fields optional (partial update). Requires role: requester."
+          }
+        },
+        {
+          "name": "Update Requester by ID",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Nueva dirección 456\",\n  \"monthly_income\": 18000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/requester/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "requester", ":id"],
+              "variable": [
+                { "key": "id", "value": "00000000-0000-0000-0000-000000000000" }
+              ]
+            },
+            "description": "Update requester by UUID. Requires role: analyst or supervisor."
+          }
+        },
+        {
+          "name": "Delete Current Requester",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/v1/requester",
+            "description": "Delete the authenticated requester. Requires role: requester."
+          }
+        },
+        {
+          "name": "Delete Requester by ID",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/requester/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "requester", ":id"],
+              "variable": [
+                { "key": "id", "value": "00000000-0000-0000-0000-000000000000" }
+              ]
+            },
+            "description": "Delete requester by UUID. Requires role: analyst or supervisor."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -17,7 +17,8 @@ import { CreateRequesterDto } from './dto/create-requester.dto';
 import { Requester } from './entities/requester.entity';
 import { UpdateRequesterDto } from './dto/update-requester.dto';
 import { RequesterViewDto } from './dto/requester-view.dto';
-import { plainToInstance } from 'class-transformer';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { getCognitoErrorName } from '@common/utils/error.util';
 
 @Injectable()
 export class RequesterService {
@@ -38,30 +39,22 @@ export class RequesterService {
 
   async create(dto: CreateRequesterDto) {
     this.logger.log('Creating new requester in Cognito and DB');
-    const sanitizedDto: CreateRequesterDto = {
-      ...dto,
-      email: dto.email.toLowerCase().trim(),
-      firstname: dto.firstname.trim(),
-      lastname: dto.lastname.trim(),
-      rfc: dto.rfc.trim(),
-      curp: dto.curp.trim(),
-    };
-    const username: string = sanitizedDto.email;
+    const username: string = dto.email;
     let userSub = '';
     try {
       const signUpRes = await this.cognitoClient.send(
         new SignUpCommand({
           ClientId: this.configSvc.getOrThrow<string>('cognito.clientId'),
           Username: username,
-          Password: sanitizedDto.password,
+          Password: dto.password,
           UserAttributes: [
             { Name: 'email', Value: username },
             {
               Name: 'name',
-              Value: `${sanitizedDto.firstname} ${sanitizedDto.lastname}`,
+              Value: `${dto.firstname} ${dto.lastname}`,
             },
-            { Name: 'custom:rfc', Value: sanitizedDto.rfc },
-            { Name: 'custom:curp', Value: sanitizedDto.curp },
+            { Name: 'custom:rfc', Value: dto.rfc },
+            { Name: 'custom:curp', Value: dto.curp },
           ],
         }),
       );
@@ -77,37 +70,33 @@ export class RequesterService {
         }),
       );
     } catch (err: unknown) {
+      const name = getCognitoErrorName(err);
       let errorMessage = 'Registration failed. Please try again.';
 
-      if (typeof err === 'object' && err !== null && 'name' in err) {
-        const errorName = (err as Record<string, unknown>).name;
-        if (errorName === 'UsernameExistsException') {
-          errorMessage = 'An account with this email already exists.';
-        } else if (errorName === 'InvalidPasswordException') {
-          errorMessage = 'Password does not meet security requirements.';
-        } else if (errorName === 'InvalidParameterException') {
-          errorMessage = 'Invalid registration information provided.';
-        }
-
-        this.logger.error(
-          `Cognito registration error: ${String(errorName)}`,
-          (err as Error)?.stack,
-        );
+      if (name === 'UsernameExistsException') {
+        errorMessage = 'An account with this email already exists.';
+      } else if (name === 'InvalidPasswordException') {
+        errorMessage = 'Password does not meet security requirements.';
+      } else if (name === 'InvalidParameterException') {
+        errorMessage = 'Invalid registration information provided.';
       }
+
+      this.logger.error(
+        `Cognito registration error: ${name ?? 'unknown'}`,
+        (err as Error)?.stack,
+      );
 
       throw new BadRequestException(errorMessage);
     }
     const sub: string = userSub;
 
-    const dtoWithoutPassword: Omit<CreateRequesterDto, 'password'> & {
-      password?: string;
-    } = { ...sanitizedDto };
-    delete dtoWithoutPassword.password;
+    const { password: _, ...requesterData } = instanceToPlain(dto) as Record<
+      string,
+      unknown
+    >;
 
-    const entity: Requester = new Requester({
-      ...dtoWithoutPassword,
-      sub,
-    });
+    const entity: Requester = new Requester();
+    Object.assign(entity, requesterData, { sub });
 
     try {
       const requesterSaved: Requester = await this.requesterRepo.create(entity);
@@ -129,9 +118,12 @@ export class RequesterService {
           }),
         );
       } catch (delError) {
-        this.logger.warn(
-          'Rollback Cognito user deletion failed',
+        this.logger.error(
+          'Rollback Cognito user deletion failed — orphaned Cognito user requires manual cleanup',
           (delError as Error)?.stack,
+        );
+        throw new InternalServerErrorException(
+          'Registration failed and automatic cleanup could not be completed. Please contact support.',
         );
       }
       throw new InternalServerErrorException('Failed to persist requester');
@@ -169,11 +161,8 @@ export class RequesterService {
           UserPoolId: this.userPoolId,
         }),
       );
-    } catch (err) {
-      const name =
-        typeof err === 'object' && err !== null && 'name' in err
-          ? (err as { name?: string }).name
-          : undefined;
+    } catch (err: unknown) {
+      const name = getCognitoErrorName(err);
       if (name === 'UserNotFoundException') {
         this.logger.warn(
           `Cognito user not found for ${email}; proceeding to delete DB record`,

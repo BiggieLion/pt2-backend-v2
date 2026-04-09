@@ -76,9 +76,10 @@ export abstract class AbstractRepository<T extends AbstractEntity<T>> {
     );
 
     if (!updateResult.affected) {
+      const whereKeys =
+        where && typeof where === 'object' ? Object.keys(where as object) : [];
       this.logger.warn(
-        `Entity not found with the next where conditions: `,
-        where,
+        `Entity not found for update. where keys: [${whereKeys.join(', ')}]`,
       );
 
       throw new NotFoundException('Entity not found');

@@ -3,12 +3,11 @@ import { Module } from '@nestjs/common';
 import { Request } from './entities/request.entity';
 import { RequestController } from './request.controller';
 import { RequestService } from './request.service';
-import { RequesterRepository } from '@requester/requester.repository';
-import { Requester } from '@requester/entities/requester.entity';
+import { RequesterModule } from '@requester/requester.module';
 
 @Module({
-  imports: [DatabaseModule.forFeature([Request, Requester])],
+  imports: [DatabaseModule.forFeature([Request]), RequesterModule],
   controllers: [RequestController],
-  providers: [RequestService, RequesterRepository],
+  providers: [RequestService],
 })
 export class RequestModule {}

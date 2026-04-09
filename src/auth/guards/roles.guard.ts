@@ -30,9 +30,8 @@ export class RolesGuard implements CanActivate {
     if (!user) {
       throw new UnauthorizedException('User not authenticated');
     }
-    // Normalize roles to a lowercased array; our UserDto defines a single 'rol' string
-    const userRoles: string[] = user?.rol
-      ? [String(user.rol).toLowerCase()]
+    const userRoles: string[] = Array.isArray(user.roles)
+      ? user.roles.map((r) => r.toLowerCase())
       : [];
 
     if (userRoles.length === 0) {

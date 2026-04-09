@@ -8,10 +8,14 @@ import {
 import { Request, Response } from 'express';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { DataResponse, CustomResponse } from '../interfaces';
+import { ResponseAction } from '../enums/response-action.enum';
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<CustomResponse> {
     const req: Request = context.switchToHttp().getRequest();
     const res: Response = context.switchToHttp().getResponse();
     const { statusCode } = res;
@@ -37,16 +41,18 @@ export class ResponseInterceptor implements NestInterceptor {
           success: statusCode < 400,
           timestamp: new Date().toISOString(),
           path: req.url,
-          action: statusCode >= 400 ? 'CANCEL' : 'CONTINUE',
+          action:
+            statusCode >= 400 ? ResponseAction.CANCEL : ResponseAction.CONTINUE,
           message,
           version: '2.0.0',
           data: data ?? {},
-        } as CustomResponse;
+        };
       }),
 
       catchError((err: unknown) => {
         const errorStatusCode: number =
           err instanceof HttpException ? err.getStatus() : 500;
+        const isProduction = process.env.NODE_ENV === 'production';
 
         // Derive a safe error message without unsafe member access
         let derivedMessage = 'Internal server error';
@@ -66,24 +72,28 @@ export class ResponseInterceptor implements NestInterceptor {
           } else if (typeof err.message === 'string') {
             derivedMessage = err.message;
           }
-        } else if (typeof err === 'string') {
-          derivedMessage = err;
-        } else if (
-          typeof err === 'object' &&
-          err !== null &&
-          'message' in err &&
-          typeof (err as { message?: unknown }).message === 'string'
-        ) {
-          derivedMessage = (err as { message: string }).message;
+        } else if (!isProduction) {
+          // Only expose unknown error details outside production
+          if (typeof err === 'string') {
+            derivedMessage = err;
+          } else if (
+            typeof err === 'object' &&
+            err !== null &&
+            'message' in err &&
+            typeof (err as { message?: unknown }).message === 'string'
+          ) {
+            derivedMessage = (err as { message: string }).message;
+          }
         }
 
-        const errorResponse = {
+        const errorResponse: CustomResponse = {
           statusCode: errorStatusCode,
           success: false,
-          timestamp: Date.now(),
+          timestamp: new Date().toISOString(),
           path: req.url,
-          action: 'CANCEL',
+          action: ResponseAction.CANCEL,
           message: derivedMessage,
+          version: '2.0.0',
           data: {},
         };
 

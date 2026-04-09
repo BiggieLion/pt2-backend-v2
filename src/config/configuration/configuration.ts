@@ -6,7 +6,7 @@ export const configuration = () => ({
     origins: process.env.CORS_ORIGINS,
     credentials: process.env.CORS_CREDENTIALS
       ? process.env.CORS_CREDENTIALS === 'true'
-      : true,
+      : false,
   },
 
   // Database

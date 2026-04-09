@@ -2,6 +2,7 @@ import { AbstractEntity } from '@config/database';
 import { CreditType, RequestStatus } from '@request/constants';
 import { Requester } from '@requester/entities/requester.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { MoneyTransformer } from '@common/transformers/money.transformer';
 
 @Entity('request')
 export class Request extends AbstractEntity<Request> {
@@ -25,22 +26,7 @@ export class Request extends AbstractEntity<Request> {
   @Column({ nullable: false, type: 'timestamptz' })
   termination_date: Date;
 
-  @Column({
-    nullable: false,
-    type: 'bigint',
-    transformer: {
-      // Backend sends 123.45 -> database stores as 12345 cents
-      to: (value: number): string => {
-        if (typeof value !== 'number' || Number.isNaN(value)) return '0';
-        return Math.round(value * 100).toString();
-      },
-      // Database return '12345' cents -> backend gets 123.45
-      from: (value: string): number => {
-        const cents: number = parseInt(value, 10);
-        return cents / 100;
-      },
-    },
-  })
+  @Column({ nullable: false, type: 'bigint', transformer: MoneyTransformer })
   amount: number;
 
   @Column({ nullable: false, type: 'boolean', default: false })
@@ -50,18 +36,7 @@ export class Request extends AbstractEntity<Request> {
     nullable: false,
     default: 0,
     type: 'bigint',
-    transformer: {
-      // Backend sends 123.45 -> database stores as 12345 cents
-      to: (value: number): string => {
-        if (typeof value !== 'number' || Number.isNaN(value)) return '0';
-        return Math.round(value * 100).toString();
-      },
-      // Database return '12345' cents -> backend gets 123.45
-      from: (value: string): number => {
-        const cents: number = parseInt(value, 10);
-        return cents / 100;
-      },
-    },
+    transformer: MoneyTransformer,
   })
   guarantee_value: number;
 

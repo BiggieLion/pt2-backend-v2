@@ -13,6 +13,8 @@ import {
 
 @Injectable()
 export class CognitoJwtStrategy extends PassportStrategy(JwtStrategy) {
+  private readonly allowedGroups: string[];
+
   constructor(private readonly configSvc: ConfigService) {
     const clientId: string = configSvc.getOrThrow<string>('cognito.clientId');
     const issuer: string = configSvc.getOrThrow<string>('cognito.authority');
@@ -31,6 +33,12 @@ export class CognitoJwtStrategy extends PassportStrategy(JwtStrategy) {
       }),
     };
     super(opts);
+
+    this.allowedGroups = [
+      configSvc.getOrThrow<string>('cognito.requesterGroup'),
+      configSvc.getOrThrow<string>('cognito.analystGroup'),
+      configSvc.getOrThrow<string>('cognito.supervisorGroup'),
+    ];
   }
 
   validate(payload: JwtToken): UserDto {
@@ -38,17 +46,23 @@ export class CognitoJwtStrategy extends PassportStrategy(JwtStrategy) {
       throw new UnauthorizedException('Invalid token use');
     }
 
-    const rol: string =
-      Array.isArray(payload['cognito:groups']) &&
-      payload['cognito:groups'].length > 0
-        ? payload['cognito:groups'][0]
-        : 'default';
+    const tokenGroups: string[] = Array.isArray(payload['cognito:groups'])
+      ? payload['cognito:groups']
+      : [];
+
+    const roles: string[] = tokenGroups.filter((g) =>
+      this.allowedGroups.includes(g),
+    );
+
+    if (roles.length === 0) {
+      throw new UnauthorizedException('No valid role assigned');
+    }
 
     return {
       id: payload.sub,
       name: payload.name ?? payload['cognito:username'] ?? 'No name',
       email: payload.email ?? 'No email',
-      rol,
+      roles,
     };
   }
 }

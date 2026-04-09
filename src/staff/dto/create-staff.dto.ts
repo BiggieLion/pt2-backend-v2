@@ -9,6 +9,7 @@ import {
   Length,
   Matches,
 } from 'class-validator';
+import { PASSWORD_REGEX } from '@shared/constants/regex';
 
 export class CreateStaffDto {
   @IsString()
@@ -42,10 +43,10 @@ export class CreateStaffDto {
 
   @IsString()
   @IsNotEmpty()
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[-$&+,:;=?@#|'<>.^*()%!])[A-Za-z\d-$&+,:;=?@#|'<>.^*()%!]{8,}$/,
-    { message: 'invalid password' },
-  )
+  @Matches(PASSWORD_REGEX, {
+    message:
+      'Password must be at least 8 characters and include an uppercase letter, a number, and a special symbol',
+  })
   password: string;
 
   @IsString()
@@ -63,5 +64,5 @@ export class CreateStaffDto {
 
   @IsString()
   @IsNotEmpty()
-  rol: string;
+  role: string;
 }
