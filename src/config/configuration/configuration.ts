@@ -26,6 +26,14 @@ export const configuration = () => ({
     secretKey: process.env.AWS_SECRET_KEY,
   },
 
+  // Tracing (OpenTelemetry)
+  tracing: {
+    enabled: process.env.OTEL_TRACING_ENABLED !== 'false',
+    serviceName: process.env.OTEL_SERVICE_NAME ?? 'pt2-backend',
+    exporterType: process.env.OTEL_EXPORTER_TYPE ?? 'console',
+    otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+  },
+
   // Cognito
   cognito: {
     userPoolId: process.env.COGNITO_USER_POOL_ID,

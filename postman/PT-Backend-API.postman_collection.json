@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PT Backend API",
-    "description": "REST API collection for the PT Backend (NestJS).\n\n- Base URL uses `{{baseUrl}}` (default: http://localhost:3000/api)\n- Protected endpoints use Bearer token: set `{{accessToken}}` after login or refresh",
+    "description": "REST API collection for the PT Backend (NestJS).\n\n- Base URL uses `{{baseUrl}}` (default: http://localhost:3000/api)\n- Protected endpoints use Bearer token: set `{{accessToken}}` after login or refresh\n- All responses follow the standard envelope: `{ statusCode, success, timestamp, path, action, message, version, data }`\n- Requests support `x-correlation-id` header for tracing (auto-generated if not provided)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -17,15 +17,16 @@
   "item": [
     {
       "name": "App",
-      "description": "Global health endpoint",
+      "description": "Global health endpoint (no version prefix)",
       "item": [
         {
           "name": "Health Check",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/health",
-            "description": "Single global health endpoint for the API (load balancers, probes). No auth required."
+            "description": "Global health endpoint for load balancers and probes. No auth required. Path: GET /api/health (no version prefix)."
           }
         }
       ]
@@ -36,6 +37,23 @@
       "item": [
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.accessToken) {",
+                  "  pm.environment.set('accessToken', res.data.accessToken);",
+                  "}",
+                  "if (res.data && res.data.refreshToken) {",
+                  "  pm.environment.set('refreshToken', res.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -47,7 +65,7 @@
               "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"P@ssw0rd!\"\n}"
             },
             "url": "{{baseUrl}}/v1/auth/login",
-            "description": "Authenticate user and return JWT tokens. Use the returned accessToken (or idToken) as Bearer token for protected endpoints."
+            "description": "Authenticate user via Cognito and return JWT tokens.\n\nResponse data: `{ accessToken, expiresIn, refreshToken, tokenType }`\n\nThe test script auto-saves `accessToken` and `refreshToken` to environment variables."
           }
         },
         {
@@ -63,7 +81,7 @@
               "raw": "{\n  \"email\": \"user@example.com\"\n}"
             },
             "url": "{{baseUrl}}/v1/auth/forgot-password",
-            "description": "Send password reset code to user email (if email exists)."
+            "description": "Send password reset code to user email (if email exists in Cognito).\n\nResponse data: `{ delivery: { DeliveryMedium, Destination } }`"
           }
         },
         {
@@ -79,11 +97,28 @@
               "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"NewSecureP@ssw0rd\"\n}"
             },
             "url": "{{baseUrl}}/v1/auth/confirm-password",
-            "description": "Reset password using the code sent via email."
+            "description": "Reset password using the verification code sent via email.\n\nResponse data: `{ success: true }`"
           }
         },
         {
           "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.accessToken) {",
+                  "  pm.environment.set('accessToken', res.data.accessToken);",
+                  "}",
+                  "if (res.data && res.data.refreshToken) {",
+                  "  pm.environment.set('refreshToken', res.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -95,17 +130,31 @@
               "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
             },
             "url": "{{baseUrl}}/v1/auth/refresh",
-            "description": "Get new access token using refresh token. Add a collection variable `refreshToken` if you want to use it here."
+            "description": "Get new access token using refresh token.\n\nResponse data: `{ accessToken, idToken, refreshToken, expiresIn, tokenType }`\n\nThe test script auto-saves new tokens to environment variables."
           }
         }
       ]
     },
     {
       "name": "Requester",
-      "description": "Requester management. Create is public; other endpoints require JWT and specific roles (requester / analyst / supervisor).",
+      "description": "Requester (credit applicant) management. Create is public; other endpoints require JWT and specific roles.",
       "item": [
         {
           "name": "Create Requester",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.environment.set('requesterId', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -114,10 +163,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"curp\": \"CURP180000HDFLRN01\",\n  \"rfc\": \"CUR180000ABC\",\n  \"firstname\": \"Juan\",\n  \"lastname\": \"Pérez López\",\n  \"monthly_income\": 15000.5,\n  \"email\": \"juan.perez@example.com\",\n  \"password\": \"P@ssw0rd!\",\n  \"address\": \"Calle Principal 123, Col. Centro\",\n  \"gender\": \"M\",\n  \"count_children\": 2,\n  \"count_adults\": 2,\n  \"count_family_members\": 4,\n  \"civil_status\": \"Casado\",\n  \"education_level\": \"Universidad\",\n  \"occupation_type\": 1,\n  \"days_employed\": 365,\n  \"birthdate\": \"1990-01-15\",\n  \"has_own_car\": true,\n  \"has_own_realty\": false\n}"
+              "raw": "{\n  \"curp\": \"CURP180000HDFLRN01\",\n  \"rfc\": \"CUR180000ABC\",\n  \"firstname\": \"Juan\",\n  \"lastname\": \"Perez Lopez\",\n  \"monthly_income\": 15000.50,\n  \"email\": \"juan.perez@example.com\",\n  \"password\": \"P@ssw0rd!\",\n  \"address\": \"Calle Principal 123, Col. Centro\",\n  \"gender\": \"M\",\n  \"count_children\": 2,\n  \"count_adults\": 2,\n  \"count_family_members\": 4,\n  \"civil_status\": \"Casado\",\n  \"education_level\": \"Universidad\",\n  \"occupation_type\": 1,\n  \"days_employed\": 365,\n  \"birthdate\": \"1990-01-15\",\n  \"has_own_car\": true,\n  \"has_own_realty\": false,\n  \"has_active_request\": false\n}"
             },
             "url": "{{baseUrl}}/v1/requester",
-            "description": "Create a new requester. Throttled (requester-create). No auth."
+            "description": "Create a new requester and register in Cognito. Throttled (5 req/min). No auth.\n\nRequired fields: curp, rfc, firstname, lastname, monthly_income, email, password, address, gender, count_children, count_adults, count_family_members, civil_status, education_level, occupation_type, days_employed, birthdate, has_own_car, has_own_realty.\n\nOptional: has_active_request (default: false).\n\nThe test script auto-saves the created requester ID."
           }
         },
         {
@@ -126,7 +175,7 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/v1/requester",
-            "description": "Get the requester profile for the authenticated user. Requires role: requester."
+            "description": "Get the requester profile for the authenticated user.\n\nRequires role: requester."
           }
         },
         {
@@ -135,14 +184,11 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1/requester/:id",
+              "raw": "{{baseUrl}}/v1/requester/{{requesterId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["v1", "requester", ":id"],
-              "variable": [
-                { "key": "id", "value": "00000000-0000-0000-0000-000000000000" }
-              ]
+              "path": ["v1", "requester", "{{requesterId}}"]
             },
-            "description": "Get requester by UUID. Requires role: analyst or supervisor."
+            "description": "Get requester by UUID.\n\nRequires role: analyst or supervisor."
           }
         },
         {
@@ -154,10 +200,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"address\": \"Nueva dirección 456\",\n  \"monthly_income\": 18000\n}"
+              "raw": "{\n  \"address\": \"Nueva direccion 456\",\n  \"monthly_income\": 18000\n}"
             },
             "url": "{{baseUrl}}/v1/requester",
-            "description": "Update the authenticated requester. All fields optional (partial update). Requires role: requester."
+            "description": "Update the authenticated requester. All fields optional (partial update). Password excluded from update.\n\nRequires role: requester."
           }
         },
         {
@@ -169,17 +215,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"address\": \"Nueva dirección 456\",\n  \"monthly_income\": 18000\n}"
+              "raw": "{\n  \"address\": \"Nueva direccion 456\",\n  \"monthly_income\": 18000\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/v1/requester/:id",
+              "raw": "{{baseUrl}}/v1/requester/{{requesterId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["v1", "requester", ":id"],
-              "variable": [
-                { "key": "id", "value": "00000000-0000-0000-0000-000000000000" }
-              ]
+              "path": ["v1", "requester", "{{requesterId}}"]
             },
-            "description": "Update requester by UUID. Requires role: analyst or supervisor."
+            "description": "Update requester by UUID. All fields optional (partial update). Password excluded from update.\n\nRequires role: analyst or supervisor."
           }
         },
         {
@@ -188,7 +231,7 @@
             "method": "DELETE",
             "header": [],
             "url": "{{baseUrl}}/v1/requester",
-            "description": "Delete the authenticated requester. Requires role: requester."
+            "description": "Soft-delete the authenticated requester (also removes Cognito user).\n\nRequires role: requester."
           }
         },
         {
@@ -197,14 +240,48 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1/requester/:id",
+              "raw": "{{baseUrl}}/v1/requester/{{requesterId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["v1", "requester", ":id"],
-              "variable": [
-                { "key": "id", "value": "00000000-0000-0000-0000-000000000000" }
-              ]
+              "path": ["v1", "requester", "{{requesterId}}"]
             },
-            "description": "Delete requester by UUID. Requires role: analyst or supervisor."
+            "description": "Soft-delete requester by UUID (also removes Cognito user).\n\nRequires role: analyst or supervisor."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Request",
+      "description": "Credit request management. Controller registered but no routes implemented yet. DTOs are defined for future use.",
+      "item": [
+        {
+          "name": "[Placeholder] Create Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credit_type\": \"personal\",\n  \"termination_date\": \"2027-12-31\",\n  \"amount\": 50000.00,\n  \"has_guarantee\": false,\n  \"guarantee_value\": 0,\n  \"requester_id\": \"{{requesterId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/request",
+            "description": "NOT YET IMPLEMENTED — placeholder based on CreateRequestDto.\n\ncredit_type: personal | chattel | mortgage\nstatus (optional): created (default) | in_review | approved | no_approved | accepted | rejected | completed\ntermination_date: ISO date string\namount: decimal (max 2 places)\nhas_guarantee: boolean\nguarantee_value (optional): decimal\nrequester_id: UUID v4"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff",
+      "description": "Staff (analysts, supervisors) management. Module under construction.",
+      "item": [
+        {
+          "name": "Staff Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/v1/staff/health",
+            "description": "Health endpoint for the staff module. No auth required."
           }
         }
       ]

@@ -25,4 +25,9 @@ export const validationSchema: Joi.ObjectSchema<any> = Joi.object({
   COGNITO_ANALYST_GROUP: Joi.string().required(),
   COGNITO_SUPERVISOR_GROUP: Joi.string().required(),
   COGNITO_AUTHORITY: Joi.string().required(),
+  // Tracing (OpenTelemetry) — all optional with sensible defaults
+  OTEL_TRACING_ENABLED: Joi.boolean().default(true),
+  OTEL_SERVICE_NAME: Joi.string().default('pt2-backend'),
+  OTEL_EXPORTER_TYPE: Joi.string().valid('console', 'otlp').default('console'),
+  OTEL_EXPORTER_OTLP_ENDPOINT: Joi.string().uri().optional(),
 });
