@@ -1,3 +1,7 @@
+import { initTracing } from '@config/tracing';
+
+initTracing();
+
 import { NestFactory, Reflector } from '@nestjs/core';
 import {
   ClassSerializerInterceptor,

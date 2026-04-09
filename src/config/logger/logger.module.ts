@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
+import { genReqId, otelMixin } from './logger.helpers';
 
 @Module({
   imports: [
     PinoLoggerModule.forRoot({
       pinoHttp: {
         base: {},
+        genReqId,
+        mixin: otelMixin,
         formatters: {
           level: (label: string) => {
             return { level: label.toUpperCase() };

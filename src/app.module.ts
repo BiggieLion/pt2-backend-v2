@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './config/database/database.module';
 import { ConfigurationModule } from './config/configuration/configuration.module';
 import { LoggerModule } from './config/logger/logger.module';
+import { TracingModule } from './config/tracing/tracing.module';
 import { RequesterModule } from './requester/requester.module';
 import { AuthModule } from './auth/auth.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -11,6 +12,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { RequestModule } from './request/request.module';
 import { StaffModule } from './staff/staff.module';
+import { CorrelationIdMiddleware } from '@common/middlewares/correlation-id.middleware';
 
 @Module({
   imports: [
@@ -30,6 +32,7 @@ import { StaffModule } from './staff/staff.module';
     DatabaseModule,
     ConfigurationModule,
     LoggerModule,
+    TracingModule,
     RequesterModule,
     AuthModule,
     RequestModule,
@@ -42,4 +45,8 @@ import { StaffModule } from './staff/staff.module';
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}
