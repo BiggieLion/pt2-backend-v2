@@ -1,6 +1,6 @@
 ---
 name: Commiter
-description: Analyzes staged git changes and generates a Conventional Commit message. Run with /commiter.
+description: Analyzes staged git changes, generates a Conventional Commit message, and creates the commit. Run with /commiter.
 allowed-tools: Bash
 ---
 
@@ -79,14 +79,29 @@ Rules:
 - If there are breaking changes, add `!` after `type(scope)` AND include a `BREAKING CHANGE:` footer explaining the impact.
 - Body and footer are optional but encouraged when the change is non-trivial.
 
-## Step 6 — output the commit message
+## Step 6 — create the commit
 
-Print the commit message inside a fenced code block so the user can copy it easily:
+Print the commit message inside a fenced code block so the user can see it:
 
 ```
 type(scope): description
 ```
 
-Then, below the code block, provide a brief one-sentence explanation of why you chose that type and scope, so the user can validate or adjust your reasoning.
+Then, provide a brief one-sentence explanation of why you chose that type and scope.
 
-Do **not** run `git commit` — only suggest the message.
+Finally, run the commit using a HEREDOC to preserve formatting:
+
+```bash
+git commit -m "$(cat <<'EOF'
+type(scope): short imperative description
+
+optional body...
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)"
+```
+
+Always append the `Co-Authored-By` trailer as shown above.
+
+If the commit fails (e.g. pre-commit hook), report the error to the user — do **not** retry automatically.
