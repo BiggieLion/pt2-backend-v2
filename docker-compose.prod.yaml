@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16-alpine
@@ -18,7 +16,9 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - pt2-network
+      - pt2-db-network
+    security_opt:
+      - no-new-privileges:true
     restart: always
     logging:
       driver: "json-file"
@@ -45,25 +45,31 @@ services:
         condition: service_healthy
     networks:
       - pt2-network
+      - pt2-db-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    # Resource limits efectivos para docker compose standalone (no Swarm)
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: "1.0"
     restart: always
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    # Resource limits for production
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 512M
-        reservations:
-          cpus: "0.5"
-          memory: 256M
 
 networks:
   pt2-network:
     driver: bridge
+  pt2-db-network:
+    driver: bridge
+    internal: true
 
 volumes:
   pgdata_prod:
