@@ -1,7 +1,7 @@
 # ============================================
 # Stage 1: Base - Common dependencies
 # ============================================
-FROM node:lts-alpine AS base
+FROM node:22-alpine3.21 AS base
 
 WORKDIR /usr/src/app
 
@@ -49,7 +49,7 @@ RUN npm prune --production
 # ============================================
 # Stage 4: Production - Minimal runtime
 # ============================================
-FROM node:lts-alpine AS production
+FROM node:22-alpine3.21 AS production
 
 # Install dumb-init and create non-root user
 RUN apk add --no-cache dumb-init && \
@@ -71,9 +71,9 @@ USER nestjs
 # Expose port
 EXPOSE 3000
 
-# Health check
+# Health check — usa ${PORT:-3000} para respetar la variable de entorno del contenedor
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD wget -qO /dev/null http://localhost:${PORT:-3000}/api/health || exit 1
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]

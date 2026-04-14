@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16-alpine
@@ -19,7 +17,9 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - pt2-network
+      - pt2-db-network
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
   api:
@@ -47,11 +47,19 @@ services:
         condition: service_healthy
     networks:
       - pt2-network
+      - pt2-db-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
 
 networks:
   pt2-network:
     driver: bridge
+  pt2-db-network:
+    driver: bridge
+    internal: true
 
 volumes:
   pgdata_dev:

@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, RequestMethod } from '@nestjs/common';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { genReqId, otelMixin } from './logger.helpers';
 
 @Module({
   imports: [
     PinoLoggerModule.forRoot({
+      forRoutes: [{ path: '/*path', method: RequestMethod.ALL }],
       pinoHttp: {
         base: {},
         genReqId,
